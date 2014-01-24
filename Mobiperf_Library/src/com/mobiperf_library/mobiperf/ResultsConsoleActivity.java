@@ -60,6 +60,9 @@ public class ResultsConsoleActivity extends Activity {
     this.consoleView = (ListView) this.findViewById(R.id.resultConsole);
     this.results = new ArrayAdapter<String>(getApplicationContext(), R.layout.list_item);
     this.consoleView.setAdapter(this.results);
+    /**
+     * TODO(Hongyi): still keep progress bar?
+     */
     this.progressBar = (ProgressBar) this.findViewById(R.id.progress_bar);
     this.progressBar.setMax(Config.MAX_PROGRESS_BAR_VALUE);
     this.progressBar.setProgress(Config.MAX_PROGRESS_BAR_VALUE);
@@ -140,7 +143,10 @@ public class ResultsConsoleActivity extends Activity {
     super.onDestroy();
     this.unregisterReceiver(this.receiver);
   }
-  
+
+  /**
+   * TODO(Hongyi): we don't need scheduler here
+   */
   private synchronized void getConsoleContentFromScheduler() {
     Logger.d("ResultsConsoleActivity.getConsoleContentFromScheduler called");
     if (scheduler == null) {

@@ -64,6 +64,11 @@ public class SpeedometerApp extends TabActivity {
  private BroadcastReceiver receiver;
  TextView statusBar, statsBar;
  
+
+ /**
+  * TODO(Hongyi): we don't need scheduler
+  */
+ 
  /** Defines callbacks for service binding, passed to bindService() */
  private ServiceConnection serviceConn = new ServiceConnection() {
    @Override
@@ -136,6 +141,10 @@ public class SpeedometerApp extends TabActivity {
    // Handle item selection
    switch (item.getItemId()) {
      case R.id.menuPauseResume:
+       /**
+        * TODO(Hongyi): shall we still support pausing executing server tasks 
+        * in scheduler?
+        */
        if (this.scheduler != null) {
          if (this.scheduler.isPauseRequested()) {
            this.scheduler.resume();
@@ -215,10 +224,16 @@ public class SpeedometerApp extends TabActivity {
    tabHost.addTab(spec);
 
    tabHost.setCurrentTabByTag(MeasurementCreationActivity.TAB_TAG);
-   
+
+   /**
+    * TODO(Hongyi): remove status&stat bar
+    */
    statusBar = (TextView) findViewById(R.id.systemStatusBar);
    statsBar = (TextView) findViewById(R.id.systemStatsBar);
-   
+
+   /**
+    * TODO(Hongyi): consider using API interface instead 
+    */
    // We only need one instance of the scheduler thread
    intent = new Intent(this, MeasurementScheduler.class);
    this.startService(intent);
@@ -258,6 +273,10 @@ public class SpeedometerApp extends TabActivity {
    }
  }
  
+
+ /**
+  * TODO(Hongyi): remove status&stat bar
+  */
  private void initializeStatusBar() {
    if (this.scheduler.isPauseRequested()) {
      updateStatusBar(SpeedometerApp.this.getString(R.string.pauseMessage));
@@ -276,19 +295,28 @@ public class SpeedometerApp extends TabActivity {
      }
    }
  }
- 
+
+ /**
+  * TODO(Hongyi): remove status&stat bar
+  */
  private void updateStatusBar(String statusMsg) {
    if (statusMsg != null) {
      statusBar.setText(statusMsg);
    }
  }
- 
+
+ /**
+  * TODO(Hongyi): remove status&stat bar
+  */
  private void updateStatsBar(String statsMsg) {
    if (statsMsg != null) {
      statsBar.setText(statsMsg);
    }
  }
- 
+
+ /**
+  * TODO(Hongyi): remove it
+  */
  private void bindToService() {
    if (!isBindingToService && !isBound) {
      // Bind to the scheduler service if it is not bounded
@@ -358,6 +386,9 @@ public class SpeedometerApp extends TabActivity {
  protected void onStart() {
    Logger.d("onStart called");
    // Bind to the scheduler service for only once during the lifetime of the activity
+   /**
+    * TODO(Hongyi): change to API function
+    */
    bindToService();
    super.onStart();
  }
@@ -366,6 +397,9 @@ public class SpeedometerApp extends TabActivity {
  protected void onStop() {
    Logger.d("onStop called");
    super.onStop();
+   /**
+    * TODO(Hongyi): change to API function
+    */
    if (isBound) {
      unbindService(serviceConn);
      isBound = false;
@@ -398,7 +432,10 @@ public class SpeedometerApp extends TabActivity {
    this.finish();
    System.exit(0);
  }
- 
+
+ /**
+  * TODO(Hongyi): change to API function
+  */
  private void doCheckin() {
    if (scheduler != null) {
      scheduler.handleCheckin(true);

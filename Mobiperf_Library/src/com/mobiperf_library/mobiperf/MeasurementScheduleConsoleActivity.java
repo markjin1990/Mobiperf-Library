@@ -87,7 +87,14 @@ public class MeasurementScheduleConsoleActivity extends Activity {
         return false;
       }
     });
-    
+
+    /**
+     * TODO(Hongyi): will we still log those check-in tasks? Now the scheduler
+     *  will not broadcast server task list to the client 
+     *  If so, I suggest we should rewrite API to use intent to send information
+     *  back to the user, including measurement results.
+     *  It is more flexable and scalable 
+     */
     // Register activity specific BroadcastReceiver here    
     IntentFilter filter = new IntentFilter();
     filter.addAction(UpdateIntent.SCHEDULER_CONNECTED_ACTION);
@@ -130,6 +137,11 @@ public class MeasurementScheduleConsoleActivity extends Activity {
   /**
    * Handles the deletion of the measurement tasks when the user clicks the context menu
    */
+  /**
+   * TODO(Hongyi): Currently the server scheduled task doesn't have client key,
+   * so it cannot be cancelled by any client.
+   * Shall we allow user to cancel server task by cancelTask(taskId, null)?
+   */
   @Override
   public boolean onContextItemSelected(MenuItem item) {
     AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
@@ -149,7 +161,11 @@ public class MeasurementScheduleConsoleActivity extends Activity {
     }
     return false;
   }
-  
+
+  /**
+   * TODO(Hongyi): Better to track last check-in time in this class rather
+   * than in scheduler.
+   */
   private void updateLastCheckinTime() {
     Logger.i("updateLastCheckinTime() called");
     scheduler = parent.getScheduler();
@@ -162,7 +178,11 @@ public class MeasurementScheduleConsoleActivity extends Activity {
       }
     }
   }
-  
+
+  /**
+   * TODO(Hongyi): If we return check-in task list by intent, we don't need
+   * those function in scheduler
+   */
   private void updateConsole() {
     Logger.i("updateConsole() called");
     scheduler = parent.getScheduler();
@@ -178,7 +198,10 @@ public class MeasurementScheduleConsoleActivity extends Activity {
     }
     updateLastCheckinTime();
   }
-  
+
+  /**
+   * TODO(Hongyi): shall we expose the forced check-in function in API?
+   */
   private void doCheckin() {
     Logger.i("doCheckin() called");
     scheduler = parent.getScheduler();

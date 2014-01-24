@@ -47,7 +47,11 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
         getString(R.string.menuInitializationExceptionToast), Toast.LENGTH_LONG).show();
       return;
     }
-    
+
+    /**
+     * TODO(Hongyi): shall we allow users to change check-in interval and 
+     * min battery threshold?
+     */
     OnPreferenceChangeListener prefChangeListener = new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {

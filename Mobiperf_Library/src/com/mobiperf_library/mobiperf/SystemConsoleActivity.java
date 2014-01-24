@@ -30,11 +30,15 @@ import com.mobiperf.MeasurementScheduler.SchedulerBinder;
 /**
  * The activity that provides a console and progress bar of the ongoing measurement
  */
+/**
+ * TODO(Hongyi): do we still need this one? I haven't realized the existance of 
+ * system console until reading this file.
+ */
 public class SystemConsoleActivity extends Activity {
   private ListView consoleView;
   private MeasurementScheduler scheduler = null;
   private boolean isBound = false;
-  
+
   /** Defines callbacks for service binding, passed to bindService() */
   private ServiceConnection serviceConn = new ServiceConnection() {
     @Override

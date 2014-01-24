@@ -80,6 +80,11 @@ public class MeasurementCreationActivity extends Activity {
     /* Initialize the measurement type spinner */
     Spinner spinner = (Spinner) findViewById(R.id.measurementTypeSpinner);
     spinnerValues = new ArrayAdapter<String>(this.getApplicationContext(), R.layout.spinner_layout);
+    
+    /**
+     * TODO(Hongyi): expose getMeasurementNames and 
+     * getVisibilityForMeasurementName in API
+     */
     for (String name : MeasurementTask.getMeasurementNames()) {
       // adding list of visible measurements
       if (MeasurementTask.getVisibilityForMeasurementName(name)) {
@@ -94,6 +99,9 @@ public class MeasurementCreationActivity extends Activity {
     Button runButton = (Button) this.findViewById(R.id.runTaskButton);
     runButton.setOnClickListener(new ButtonOnClickListener());
 
+    /**
+     * TODO(Hongyi): should we allow user to directly use PingTask here?
+     */
     this.measurementTypeUnderEdit = PingTask.TYPE;
     setupEditTextFocusChangeListener();
 
@@ -139,6 +147,9 @@ public class MeasurementCreationActivity extends Activity {
     }
   }
 
+  /**
+   * TODO(Hongyi): user should not directly use those measurement task here?
+   */
   private void populateMeasurementSpecificArea() {
     TableLayout table = (TableLayout) this.findViewById(R.id.measurementCreationLayout);
     this.clearMeasurementSpecificViews(table);
@@ -185,6 +196,9 @@ public class MeasurementCreationActivity extends Activity {
     public void onClick(View v) {
       MeasurementTask newTask = null;
       boolean showLengthWarning = false;
+      /**
+       * TODO(Hongyi): use function in API instead
+       */
       try {
         if (measurementTypeUnderEdit.equals(PingTask.TYPE)) {
           EditText pingTargetText = (EditText) findViewById(R.id.pingTargetText);
@@ -277,8 +291,12 @@ public class MeasurementCreationActivity extends Activity {
              * Broadcast an intent with MEASUREMENT_ACTION so that the scheduler will immediately
              * handles the user measurement
              */
+            /**
+             * TODO(Hongyi): maybe we don't need to broadcast it now
+             */
             MeasurementCreationActivity.this.sendBroadcast(
                 new UpdateIntent("", UpdateIntent.MEASUREMENT_ACTION));
+            
             SpeedometerApp parent = (SpeedometerApp) getParent();
             TabHost tabHost = parent.getTabHost();
             tabHost.setCurrentTabByTag(ResultsConsoleActivity.TAB_TAG);
@@ -289,6 +307,9 @@ public class MeasurementCreationActivity extends Activity {
             }
             Toast.makeText(MeasurementCreationActivity.this, toastStr, Toast.LENGTH_LONG).show();
 
+            /**
+             * TODO(Hongyi): maybe we don't need to broadcast it now
+             */
             if (scheduler.getCurrentTask() != null) {
               showBusySchedulerStatus();
             }
@@ -320,6 +341,9 @@ public class MeasurementCreationActivity extends Activity {
 
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
+      /**
+       * TODO(Hongyi): This switch does not have any effect, delete it
+       */
       switch (v.getId()) {
         case R.id.pingTargetText:
           /*
@@ -350,6 +374,9 @@ public class MeasurementCreationActivity extends Activity {
      */
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+      /**
+       * TODO(Hongyi): expose getTypeForMeasurementName in API
+       */
       measurementTypeUnderEdit =
           MeasurementTask.getTypeForMeasurementName(spinnerValues.getItem((int) id));
       if (measurementTypeUnderEdit != null) {
