@@ -52,10 +52,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import com.google.myjson.reflect.TypeToken;
-//import com.mobiperf.BatteryCapPowerManager.PowerAwareTask;
-//import com.mobiperf.util.MeasurementJsonConvertor;
-//import com.mobiperf.util.PhoneUtils;
-//import com.mobiperf.R;
+
 
 /**
  * The single scheduler thread that monitors the task queue, runs tasks at their specified times,
@@ -222,7 +219,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Create notification that indicates the service is running.
    */
-  private Notification createServiceRunningNotification() {
+  private Notification createServiceRunningNotification() { //TODO(ASHNIK) notification+status bar
     // The intent to launch when the user clicks the expanded notification
     Intent intent = new Intent(this, SpeedometerApp.class);
     PendingIntent pendIntent =
@@ -246,7 +243,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Add an icon to the device status bar.
    */
-  private void addIconToStatusBar() {
+  private void addIconToStatusBar() {//TODO(ASHNIK) notification+status bar
     notificationManager.notify(NOTIFICATION_ID,
         createServiceRunningNotification());
   }
@@ -254,7 +251,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Remove the icon from the device status bar.
    */
-  private void removeIconFromStatusBar() {
+  private void removeIconFromStatusBar() {//TODO(ASHNIK) notification+status bar
     notificationManager.cancel(NOTIFICATION_ID);
   }
 
@@ -266,7 +263,7 @@ public class MeasurementScheduler extends Service {
     Logger.d("Service startSpeedometerInForeGround called");
 
     // Put scheduler service into foreground. Makes the process less likely of being killed
-    startForeground(NOTIFICATION_ID, createServiceRunningNotification());
+    startForeground(NOTIFICATION_ID, createServiceRunningNotification());//TODO(ASHNIK) notification+status bar
   }
 
   /**
@@ -368,7 +365,7 @@ public class MeasurementScheduler extends Service {
       Logger.e("Exception when handling measurements", e);
       sendStringMsg("Exception running task: " + e);
     }
-    persistState();
+    persistState();//TODO(ASHNIK) console
   }
 
   /**
@@ -418,8 +415,8 @@ public class MeasurementScheduler extends Service {
     Logger.i("starting scheduler");
     sendStringMsg("Scheduler starting");
     if (!isSchedulerStarted) {
-      restoreState();
-      updateFromPreference();
+      restoreState();//TODO(ASHNIK) preferences
+      updateFromPreference();//TODO(ASHNIK) console
       this.resume();
       /*
        * There is no onStop() for services. The service is only stopped when the user exits the
@@ -487,7 +484,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Prevents new tasks from being scheduled. Started task will still run to finish.
    */
-  public synchronized void pause() {
+  public synchronized void pause() {//TODO(ASHNIK) Called by SpeedometerApp
     Logger.d("Service pause called");
     sendStringMsg("Scheduler pausing");
     this.pauseRequested = true;
@@ -495,7 +492,7 @@ public class MeasurementScheduler extends Service {
   }
 
   /** Enables new tasks to be scheduled */
-  public synchronized void resume() {
+  public synchronized void resume() {//TODO(ASHNIK) Called by SpeedometerApp
     Logger.d("Service resume called");
     sendStringMsg("Scheduler resuming");
     this.pauseRequested = false;
@@ -536,7 +533,7 @@ public class MeasurementScheduler extends Service {
   }
 
   /** Request the scheduler to stop execution. */
-  public synchronized void requestStop() {
+  public synchronized void requestStop() {//TODO(ASHNIK) Called by SpeedometerApp
     sendStringMsg("Scheduler stop requested");
     this.stopRequested = true;
     this.notifyAll();
@@ -549,7 +546,7 @@ public class MeasurementScheduler extends Service {
    * Submit a MeasurementTask to the scheduler. Caller of this method can broadcast an intent with
    * MEASUREMENT_ACTION to start the measurement immediately.
    */
-  public boolean submitTask(MeasurementTask task) {
+  public boolean submitTask(MeasurementTask task) {//TODO called by MeasurementCreationActivity.java
     try {
       // Immediately handles measurements created by user
       if (task.getDescription().priority == MeasurementTask.USER_PRIORITY) {
@@ -593,7 +590,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Broadcast an intent to update the system status.
    */
-  public void updateStatus() {
+  public void updateStatus() {//TODO(ASHNIK) notification
     Intent intent = new Intent();
     intent.setAction(UpdateIntent.SYSTEM_STATUS_UPDATE_ACTION);
     String statsMsg =
@@ -603,7 +600,7 @@ public class MeasurementScheduler extends Service {
     sendBroadcast(intent);
   }
 
-  private void updateFromPreference() {
+  private void updateFromPreference() {//TODO(ASHNIK) preference
     Logger.d("Service updateFromPreference called");
     SharedPreferences prefs =
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -629,7 +626,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Write a string to the system console.
    */
-  public void sendStringMsg(String str) {
+  public void sendStringMsg(String str) {//TODO(ASHNIK) Write a string to the system console.
     UpdateIntent intent = new UpdateIntent(str, UpdateIntent.MSG_ACTION);
     this.sendBroadcast(intent);
   }
@@ -664,9 +661,9 @@ public class MeasurementScheduler extends Service {
     }
     persistState();
     this.notifyAll();
-    phoneUtils.shutDown();
+    phoneUtils.shutDown();//TODO(ASHNIK)
 
-    removeIconFromStatusBar();
+    removeIconFromStatusBar();//TODO(ASHNIK)
 
     Logger.i("Shut down all executors and stopping service");
   }
@@ -925,7 +922,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Persist service state to prefs.
    */
-  private synchronized void persistState() {
+  private synchronized void persistState() {//TODO(ASHNIK) save data
     Logger.d("Service persistState called");
     saveConsoleContent(systemResults, Config.PREF_KEY_SYSTEM_RESULTS);
     saveConsoleContent(userResults, Config.PREF_KEY_USER_RESULTS);
@@ -946,7 +943,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Save measurement statistics to persistent storage.
    */
-  private void saveStats() {
+  private void saveStats() {//TODO(ASHNIK) ?
     SharedPreferences prefs =
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
     SharedPreferences.Editor editor = prefs.edit();
@@ -959,7 +956,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Restore measurement statistics from persistent storage.
    */
-  private void restoreStats() {
+  private void restoreStats() {//TODO(ASHNIK) preferences
     SharedPreferences prefs =
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
     completedMeasurementCnt =
@@ -967,7 +964,7 @@ public class MeasurementScheduler extends Service {
     failedMeasurementCnt = prefs.getInt(Config.PREF_KEY_FAILED_MEASUREMENTS, 0);
   }
 
-  private boolean userConsented() {
+  private boolean userConsented() {//TODO(ASHNIK)
     SharedPreferences prefs =
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
     boolean consented = prefs.getBoolean(Config.PREF_KEY_CONSENTED, false);
@@ -978,7 +975,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Persists the content of the console as a JSON string
    */
-  private void saveConsoleContent(List<String> consoleContent, String prefKey) {
+  private void saveConsoleContent(List<String> consoleContent, String prefKey) {//TODO(ASHNIK)
     Logger.d("Service saveConsoleContent for key " + prefKey);
     SharedPreferences prefs =
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -1001,7 +998,7 @@ public class MeasurementScheduler extends Service {
   /**
    * Restores the console content from the saved JSON string
    */
-  private void initializeConsoles() {
+  private void initializeConsoles() {//TODO(ASHNIK) console
     Logger.d("Service initializeConsoles called");
 
     systemResults = new ArrayList<String>();

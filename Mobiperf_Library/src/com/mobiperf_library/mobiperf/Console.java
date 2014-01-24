@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.myjson.reflect.TypeToken;
+import com.mobiperf_library.util.MeasurementJsonConvertor;
 
 import android.app.NotificationManager;
 import android.content.Intent;
@@ -24,20 +25,20 @@ public class Console {
 	/**
 	   * Broadcast an intent to update the system status.
 	   */
-	  public void updateStatus() {//TODO(ASHNIK) notification
+	  public void updateStatus() {//TODO called by updateFromPreference() , checkin,  call(), pause(), resume(): prints completedMeasurementCnt + " completed, " + failedMeasurementCnt ...
 	    Intent intent = new Intent();
-	    intent.setAction(UpdateIntent.SYSTEM_STATUS_UPDATE_ACTION);
+	    intent.setAction(MobiperfConfig.SYSTEM_STATUS_UPDATE_ACTION);
 	    String statsMsg =
 	        completedMeasurementCnt + " completed, " + failedMeasurementCnt
 	            + " failed";
-	    intent.putExtra(UpdateIntent.STATS_MSG_PAYLOAD, statsMsg);
+	    intent.putExtra(MobiperfConfig.STATS_MSG_PAYLOAD, statsMsg);
 	    sendBroadcast(intent);
 	  }
 	
 	/**
 	 * Persist service state to prefs.
 	 */
-	private synchronized void persistState() {
+	private synchronized void persistState() {//TODO called by handleMeasurement(), cleanUp(),  checkin(),  call()
 		saveConsoleContent(systemResults, MobiperfConfig.PREF_KEY_SYSTEM_RESULTS);
 		saveConsoleContent(userResults, MobiperfConfig.PREF_KEY_USER_RESULTS);
 		saveConsoleContent(systemConsole, MobiperfConfig.PREF_KEY_SYSTEM_CONSOLE);
@@ -47,7 +48,7 @@ public class Console {
 	/**
 	 * Restore service state from prefs.
 	 */
-	private void restoreState() { 
+	private void restoreState() { //TODO called by onCreate and onStartCommand, so we need to do that when we are going to connect to scheduler
 		initializeConsoles();
 		restoreStats();
 	}
@@ -55,7 +56,7 @@ public class Console {
 	/**
 	 * Save measurement statistics to persistent storage.
 	 */
-	private void saveStats() {
+	private void saveStats() {//TODO Save measurement statistics (completedMeasurementCnt) to pref
 		SharedPreferences prefs =
 				PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		SharedPreferences.Editor editor = prefs.edit();
@@ -80,7 +81,7 @@ public class Console {
 	/**
 	 * Persists the content of the console as a JSON string
 	 */
-	private void saveConsoleContent(List<String> consoleContent, String prefKey) {
+	private void saveConsoleContent(List<String> consoleContent, String prefKey) {//TODO save console content to pref
 		
 		SharedPreferences prefs =
 				PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -103,7 +104,7 @@ public class Console {
 	/**
 	 * Restores the console content from the saved JSON string
 	 */
-	private void initializeConsoles() {
+	private void initializeConsoles() {//TODO Called by restoreState()
 		systemResults = new ArrayList<String>();
 		restoreConsole(systemResults, MobiperfConfig.PREF_KEY_SYSTEM_RESULTS);
 		if (systemResults.size() == 0) {
@@ -125,7 +126,7 @@ public class Console {
 	/**
 	 * Restores content for consoleContent with the key prefKey.
 	 */
-	private void restoreConsole(List<String> consoleContent, String prefKey) {
+	private void restoreConsole(List<String> consoleContent, String prefKey) {//TODO called by initializeConsoles()
 		Logger.d("Service restoreConsole for " + prefKey);
 		SharedPreferences prefs =
 				PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -149,7 +150,7 @@ public class Console {
 	 * Adds a string to the corresponding console depending on whether the result is a user
 	 * measurement or a system measurement
 	 */
-	private void updateResultsConsole(Intent intent) {
+	private void updateResultsConsole(Intent intent) {//TODO, when a measurement is finished, this func should be called
 		int priority =
 				intent.getIntExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,MeasurementTask.INVALID_PRIORITY);
 		String msg = intent.getStringExtra(UpdateIntent.STRING_PAYLOAD);
@@ -169,7 +170,7 @@ public class Console {
 	/**
 	 * Inserts a string into the console with the latest message on top.
 	 */
-	private void insertStringToConsole(List<String> console, String msg) {
+	private void insertStringToConsole(List<String> console, String msg) {//TODO called by updateResultsConsole()
 		if (msg != null) {
 			console.add(0, msg);
 			if (console.size() > MobiperfConfig.MAX_LIST_ITEMS) {
@@ -177,5 +178,19 @@ public class Console {
 			}
 		}
 	}
+	
+	/**
+	   * Broadcast an intent to update the system status.
+	 */
+	public void updateStatus() {//TODO  called by checkin,  call(), pause(), resume(), ...
+	    Intent intent = new Intent();
+	    intent.setAction(MobiperfConfig.SYSTEM_STATUS_UPDATE_ACTION);
+	    String statsMsg =
+	        completedMeasurementCnt + " completed, " + failedMeasurementCnt
+	            + " failed";
+	    intent.putExtra(MobiperfConfig.STATS_MSG_PAYLOAD, statsMsg);
+	    sendBroadcast(intent);
+	  }
+	
 
 }

@@ -14,12 +14,23 @@
 * limitations under the License.
 */
 
+
+//TODO: remove duplicate/unnecessary static variables
 package com.mobiperf_library.mobiperf;
+
+import com.mobiperf_library.UpdateIntent;
 
 /**
 * The system defaults.
 */
 public interface MobiperfConfig {
+	
+	//Copied from UpdateIntent
+ public static final String PACKAGE_PREFIX = MobiperfConfig.class.getPackage().getName();
+ public static final String SYSTEM_STATUS_UPDATE_ACTION = PACKAGE_PREFIX + ".SYSTEM_STATUS_UPDATE_ACTION";
+ public static final String STATS_MSG_PAYLOAD = "STATS_MSG_PAYLOAD";
+
+	
  public static final boolean DEFAULT_START_ON_BOOT = false;
  /** Constants used in various measurement tasks */
  public static final float RESOURCE_UNREACHABLE = Float.MAX_VALUE;

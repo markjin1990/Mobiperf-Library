@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="app_name">Mobiperf Library</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_name">MobiPerf</string>
+    <string name="user_agent">Linux; Android</string>
+    <string name="default_user_agent">"MobiPerf-2.0 (Linux; Android)"</string>
+    <string name="ping_executable">ping</string>
+    <string name="ping6_executable">ping6</string>
     <string name="serverUrl">https://openmobiledata.appspot.com</string>
     <string name="anonymousServerUrl">https://openmobiledata.appspot.com/anonymous</string>
     <string name="testServerUrl"></string>
@@ -29,6 +31,7 @@
     <string name="batteryMinThresPrefKey">KEY_BATTERY_THRES</string>
     <string name="startOnBootPrefKey">KEY_START_ON_BOOT</string>
     <string name="accountPrefKey">PREF_KEY_ACCOUNT</string>
+    <string name="dataLimitPrefKey">PREF_KEY_DATA_LIMIT</string>
     <string name="notificationSchedulerStarted">MobiPerf service has started</string>
     <string name="notificationServiceRunning">MobiPerf service is running</string>
     <string name="userMeasurementSuccessToast">Measurement is running. Results will show up shortly.</string>
@@ -50,5 +53,5 @@
     <string name="TCPThroughputDirLabel">Direction:</string>
     <string name="TCPThroughputTargetHint">m-lab</string>
     
-
+    
 </resources>
