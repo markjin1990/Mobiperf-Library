@@ -25,11 +25,8 @@ import com.mobiperf_library.UpdateIntent;
 */
 public interface MobiperfConfig {
 	
-	//Copied from UpdateIntent
- public static final String PACKAGE_PREFIX = MobiperfConfig.class.getPackage().getName();
- public static final String SYSTEM_STATUS_UPDATE_ACTION = PACKAGE_PREFIX + ".SYSTEM_STATUS_UPDATE_ACTION";
- public static final String STATS_MSG_PAYLOAD = "STATS_MSG_PAYLOAD";
-
+  // Hongyi: add default context interval
+  public static final int DEFAULT_CONTEXT_INTERVAL = 1;
 	
  public static final boolean DEFAULT_START_ON_BOOT = false;
  /** Constants used in various measurement tasks */

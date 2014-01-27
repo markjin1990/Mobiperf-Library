@@ -15,6 +15,10 @@
 
 package com.mobiperf_library.mobiperf;
 
+import com.mobiperf_library.AccountSelector;
+import com.mobiperf_library.R;
+import com.mobiperf_library.util.Logger;
+
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.ListPreference;
@@ -23,8 +27,6 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
-
-import com.mobiperf.R;
 
 /**
  * Activity that handles user preferences
@@ -93,14 +95,14 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
       }
     };
     
-    ListPreference lp = (ListPreference)findPreference(Config.PREF_KEY_ACCOUNT);
+    ListPreference lp = (ListPreference)findPreference(MobiperfConfig.PREF_KEY_ACCOUNT);
     final CharSequence[] items = AccountSelector.getAccountList(getApplicationContext());
     lp.setEntries(items);
     lp.setEntryValues(items);
    
     // Restore current settings.
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    String selectedAccount = prefs.getString(Config.PREF_KEY_SELECTED_ACCOUNT, null);
+    String selectedAccount = prefs.getString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, null);
     if (selectedAccount != null) {
       lp.setValue(selectedAccount);
     }
@@ -113,45 +115,45 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(Config.PREF_KEY_SELECTED_ACCOUNT, account);
+        editor.putString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, account);
         editor.commit();
         return true;
       }
     });
     
-    ListPreference dataLimitLp = (ListPreference)findPreference(Config.PREF_KEY_DATA_LIMIT);
-    final CharSequence[] dataLimitItems=new CharSequence[6];
-    dataLimitItems[0]="250 MB";
-    dataLimitItems[1]="500 MB";
-    dataLimitItems[2]="750 MB";
-    dataLimitItems[3]="1 GB";
-    dataLimitItems[4]="2 GB";
-    dataLimitItems[5]="Unlimited";
-    dataLimitLp.setEntries(dataLimitItems);
-    dataLimitLp.setEntryValues(dataLimitItems);
-   
-    // Restore current settings.
-    
-    String selectedDataLimitAccount = prefs.getString(Config.PREF_KEY_SELECTED_DATA_LIMIT, null);
-    if (selectedDataLimitAccount != null) {
-    	dataLimitLp.setValue(selectedDataLimitAccount);
-    }else{
-    	dataLimitLp.setValue("Unlimited");
-    }
-    
-    dataLimitLp.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-      @Override
-      public boolean onPreferenceChange(Preference preference, Object newValue) {
-        final String limit = newValue.toString();
-        Logger.i("new data limit is selected: " + limit);
-        
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(Config.PREF_KEY_SELECTED_DATA_LIMIT, limit);
-        editor.commit();
-        return true;
-      }
-    });
+//    ListPreference dataLimitLp = (ListPreference)findPreference(MobiperfConfig.PREF_KEY_DATA_LIMIT);
+//    final CharSequence[] dataLimitItems=new CharSequence[6];
+//    dataLimitItems[0]="250 MB";
+//    dataLimitItems[1]="500 MB";
+//    dataLimitItems[2]="750 MB";
+//    dataLimitItems[3]="1 GB";
+//    dataLimitItems[4]="2 GB";
+//    dataLimitItems[5]="Unlimited";
+//    dataLimitLp.setEntries(dataLimitItems);
+//    dataLimitLp.setEntryValues(dataLimitItems);
+//   
+//    // Restore current settings.
+//    
+//    String selectedDataLimitAccount = prefs.getString(Config.PREF_KEY_SELECTED_DATA_LIMIT, null);
+//    if (selectedDataLimitAccount != null) {
+//    	dataLimitLp.setValue(selectedDataLimitAccount);
+//    }else{
+//    	dataLimitLp.setValue("Unlimited");
+//    }
+//    
+//    dataLimitLp.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+//      @Override
+//      public boolean onPreferenceChange(Preference preference, Object newValue) {
+//        final String limit = newValue.toString();
+//        Logger.i("new data limit is selected: " + limit);
+//        
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+//        SharedPreferences.Editor editor = prefs.edit();
+//        editor.putString(Config.PREF_KEY_SELECTED_DATA_LIMIT, limit);
+//        editor.commit();
+//        return true;
+//      }
+//    });
     
     
     intervalPref.setOnPreferenceChangeListener(prefChangeListener);
@@ -166,6 +168,6 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
     super.onDestroy();
     // The scheduler has a receiver monitoring this intent to get the update.
     // TODO(Wenjie): Only broadcast update intent when there is real change in the settings.
-    this.sendBroadcast(new UpdateIntent("", UpdateIntent.PREFERENCE_ACTION));
+    this.sendBroadcast(new MobiperfIntent("", MobiperfIntent.PREFERENCE_ACTION));
   }
 }

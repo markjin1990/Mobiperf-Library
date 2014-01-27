@@ -17,6 +17,12 @@ package com.mobiperf_library.mobiperf;
 
 import java.security.Security;
 
+import com.mobiperf_library.AccountSelector;
+import com.mobiperf_library.R;
+import com.mobiperf_library.api.API;
+import com.mobiperf_library.mobiperf.Console.ConsoleBinder;
+import com.mobiperf_library.util.Logger;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.TabActivity;
@@ -43,8 +49,6 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.mobiperf.MeasurementScheduler.SchedulerBinder;
-
 /**
 * The main UI thread that manages different tabs
 */
@@ -57,17 +61,16 @@ public class SpeedometerApp extends TabActivity {
  
  private static final int DIALOG_CONSENT = 0;
  private static final int DIALOG_ACCOUNT_SELECTOR = 1;
- private MeasurementScheduler scheduler;
- private TabHost tabHost;
+ 
+ private API api;
+ private Console console;
  private boolean isBound = false;
  private boolean isBindingToService = false;
+ 
+ private TabHost tabHost;
  private BroadcastReceiver receiver;
  TextView statusBar, statsBar;
- 
 
- /**
-  * TODO(Hongyi): we don't need scheduler
-  */
  
  /** Defines callbacks for service binding, passed to bindService() */
  private ServiceConnection serviceConn = new ServiceConnection() {
@@ -76,13 +79,19 @@ public class SpeedometerApp extends TabActivity {
      Logger.d("onServiceConnected called");
      // We've bound to LocalService, cast the IBinder and get LocalService
      // instance
-     SchedulerBinder binder = (SchedulerBinder) service;
-     scheduler = binder.getService();
+     ConsoleBinder binder = (ConsoleBinder) service;
+     console = binder.getService();
+     Logger.d("console is " + console);
      isBound = true;
      isBindingToService = false;
-     initializeStatusBar();
-     SpeedometerApp.this.sendBroadcast(new UpdateIntent("",
-         UpdateIntent.SCHEDULER_CONNECTED_ACTION));
+     /**
+      * Hongyi: the display may not be correct because we have no idea what 
+      * task is running now
+      */
+     updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
+//     initializeStatusBar();
+     SpeedometerApp.this.sendBroadcast(new MobiperfIntent("",
+       MobiperfIntent.SCHEDULER_CONNECTED_ACTION));
    }
 
    @Override
@@ -92,13 +101,23 @@ public class SpeedometerApp extends TabActivity {
    }
  };
  
- /** Returns the scheduler singleton instance. Should only be called from the UI thread. */
- public MeasurementScheduler getScheduler() {
+ /** Returns the console singleton instance. Should only be called from the UI thread. */
+ public Console getConsole() {
    if (isBound) {
-     return this.scheduler;
+     return this.console;
    } else {
      bindToService();
      return null;
+   }
+ }
+ 
+ private void bindToService() {
+   if (!isBindingToService && !isBound) {
+     // Bind to the scheduler service if it is not bounded
+     Logger.d("Bind to console is called");
+     Intent intent = new Intent(this, Console.class);
+     bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
+     isBindingToService = true;
    }
  }
  
@@ -107,17 +126,17 @@ public class SpeedometerApp extends TabActivity {
    return tabHost;
  }
  
- private void setPauseIconBasedOnSchedulerState(MenuItem item) {
-   if (this.scheduler != null && item != null) {
-     if (this.scheduler.isPauseRequested()) {
-       item.setIcon(android.R.drawable.ic_media_play);
-       item.setTitle(R.string.menuResume);
-     } else {
-       item.setIcon(android.R.drawable.ic_media_pause);
-       item.setTitle(R.string.menumPause);
-     }
-   }
- }
+// private void setPauseIconBasedOnSchedulerState(MenuItem item) {
+//   if (this.scheduler != null && item != null) {
+//     if (this.scheduler.isPauseRequested()) {
+//       item.setIcon(android.R.drawable.ic_media_play);
+//       item.setTitle(R.string.menuResume);
+//     } else {
+//       item.setIcon(android.R.drawable.ic_media_pause);
+//       item.setTitle(R.string.menumPause);
+//     }
+//   }
+// }
  
  /** Populate the application menu. Only called once per onCreate() */
  @Override
@@ -127,13 +146,13 @@ public class SpeedometerApp extends TabActivity {
    return true;
  }
  
- /** Adjust menu items depending on system state. Called every time the
-  *  menu pops up */
- @Override
- public boolean onPrepareOptionsMenu (Menu menu) {
-   setPauseIconBasedOnSchedulerState(menu.findItem(R.id.menuPauseResume));
-   return true;
- }
+// /** Adjust menu items depending on system state. Called every time the
+//  *  menu pops up */
+// @Override
+// public boolean onPrepareOptionsMenu (Menu menu) {
+//   setPauseIconBasedOnSchedulerState(menu.findItem(R.id.menuPauseResume));
+//   return true;
+// }
  
  /** React to menu item selections */
  @Override
@@ -145,13 +164,13 @@ public class SpeedometerApp extends TabActivity {
         * TODO(Hongyi): shall we still support pausing executing server tasks 
         * in scheduler?
         */
-       if (this.scheduler != null) {
-         if (this.scheduler.isPauseRequested()) {
-           this.scheduler.resume();
-         } else {
-           this.scheduler.pause();
-         }
-       }
+//       if (this.scheduler != null) {
+//         if (this.scheduler.isPauseRequested()) {
+//           this.scheduler.resume();
+//         } else {
+//           this.scheduler.pause();
+//         }
+//       }
        return true;
      case R.id.menuQuit: {
        Logger.i("User requests exit. Quitting the app");
@@ -164,13 +183,14 @@ public class SpeedometerApp extends TabActivity {
        return true;
      }
      case R.id.aboutPage: {
-       Intent intent = new Intent(getBaseContext(), com.mobiperf.About.class);
+       Logger.i("Show about page");
+       Intent intent = new Intent(getBaseContext(), About.class);
        startActivity(intent);
        return true;
      }
      case R.id.menuLog: {
-       Intent intent = new Intent(getBaseContext(), SystemConsoleActivity.class);
-       startActivity(intent);
+//       Intent intent = new Intent(getBaseContext(), SystemConsoleActivity.class);
+//       startActivity(intent);
        return true;
      }
      default:
@@ -225,39 +245,38 @@ public class SpeedometerApp extends TabActivity {
 
    tabHost.setCurrentTabByTag(MeasurementCreationActivity.TAB_TAG);
 
-   /**
-    * TODO(Hongyi): remove status&stat bar
-    */
    statusBar = (TextView) findViewById(R.id.systemStatusBar);
    statsBar = (TextView) findViewById(R.id.systemStatsBar);
 
-   /**
-    * TODO(Hongyi): consider using API interface instead 
-    */
-   // We only need one instance of the scheduler thread
-   intent = new Intent(this, MeasurementScheduler.class);
+   api = API.getAPI(this, "new mobiperf");
+   // We only need one instance of the Console thread
+   intent = new Intent(this, Console.class);
    this.startService(intent);
-   
+
+   IntentFilter filter = new IntentFilter();
+   filter.addAction(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION);
    this.receiver = new BroadcastReceiver() {
      @Override
      // All onXyz() callbacks are single threaded
      public void onReceive(Context context, Intent intent) {
        // Update the status bar on SYSTEM_STATUS_UPDATE_ACTION intents
-       String statusMsg = intent.getStringExtra(UpdateIntent.STATUS_MSG_PAYLOAD);
+       String statusMsg = intent.getStringExtra(MobiperfIntent.STATUS_MSG_PAYLOAD);
        if (statusMsg != null) {
          updateStatusBar(statusMsg);
-       } else if (scheduler != null) {
-         initializeStatusBar();
        }
+       else {
+         updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
+       }
+//       } else if (scheduler != null) {
+//         initializeStatusBar();
+//       }
        
-       String statsMsg = intent.getStringExtra(UpdateIntent.STATS_MSG_PAYLOAD);
+       String statsMsg = intent.getStringExtra(MobiperfIntent.STATS_MSG_PAYLOAD);
        if (statsMsg != null) {
          updateStatsBar(statsMsg);
        }
      }
    };
-   IntentFilter filter = new IntentFilter();
-   filter.addAction(UpdateIntent.SYSTEM_STATUS_UPDATE_ACTION);
    this.registerReceiver(this.receiver, filter);
  }
  
@@ -273,56 +292,35 @@ public class SpeedometerApp extends TabActivity {
    }
  }
  
+ 
+// private void initializeStatusBar() {
+//   if (this.scheduler.isPauseRequested()) {
+//     updateStatusBar(SpeedometerApp.this.getString(R.string.pauseMessage));
+//   } else if (!scheduler.hasBatteryToScheduleExperiment()) {
+//     updateStatusBar(SpeedometerApp.this.getString(R.string.powerThreasholdReachedMsg));
+//   } else {
+//     MeasurementTask currentTask = scheduler.getCurrentTask();
+//     if (currentTask != null) {
+//       if (currentTask.getDescription().priority == API.USER_PRIORITY) {
+//         updateStatusBar("User task " + currentTask.getDescriptor() + " is running");
+//       } else {
+//         updateStatusBar("System task " + currentTask.getDescriptor() + " is running");
+//       }
+//     } else {
+//       updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
+//     }
+//   }
+// }
 
- /**
-  * TODO(Hongyi): remove status&stat bar
-  */
- private void initializeStatusBar() {
-   if (this.scheduler.isPauseRequested()) {
-     updateStatusBar(SpeedometerApp.this.getString(R.string.pauseMessage));
-   } else if (!scheduler.hasBatteryToScheduleExperiment()) {
-     updateStatusBar(SpeedometerApp.this.getString(R.string.powerThreasholdReachedMsg));
-   } else {
-     MeasurementTask currentTask = scheduler.getCurrentTask();
-     if (currentTask != null) {
-       if (currentTask.getDescription().priority == MeasurementTask.USER_PRIORITY) {
-         updateStatusBar("User task " + currentTask.getDescriptor() + " is running");
-       } else {
-         updateStatusBar("System task " + currentTask.getDescriptor() + " is running");
-       }
-     } else {
-       updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
-     }
-   }
- }
-
- /**
-  * TODO(Hongyi): remove status&stat bar
-  */
  private void updateStatusBar(String statusMsg) {
    if (statusMsg != null) {
      statusBar.setText(statusMsg);
    }
  }
 
- /**
-  * TODO(Hongyi): remove status&stat bar
-  */
  private void updateStatsBar(String statsMsg) {
    if (statsMsg != null) {
      statsBar.setText(statsMsg);
-   }
- }
-
- /**
-  * TODO(Hongyi): remove it
-  */
- private void bindToService() {
-   if (!isBindingToService && !isBound) {
-     // Bind to the scheduler service if it is not bounded
-     Intent intent = new Intent(this, MeasurementScheduler.class);
-     bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
-     isBindingToService = true;
    }
  }
  
@@ -340,7 +338,7 @@ public class SpeedometerApp extends TabActivity {
        
        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
        SharedPreferences.Editor editor = prefs.edit();
-       editor.putString(Config.PREF_KEY_SELECTED_ACCOUNT, (String) items[item]);
+       editor.putString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, (String) items[item]);
        editor.commit();
        dialog.dismiss();
        // need consent dialog when user first perform the account selection
@@ -370,7 +368,7 @@ public class SpeedometerApp extends TabActivity {
                // Enable auto start on boot.
                setStartOnBoot(true);
                // Force a checkin now since the one initiated by the scheduler was likely skipped.
-               doCheckin();
+//               doCheckin();
              }
          })
           .setNegativeButton("No thanks", new DialogInterface.OnClickListener() {
@@ -386,9 +384,6 @@ public class SpeedometerApp extends TabActivity {
  protected void onStart() {
    Logger.d("onStart called");
    // Bind to the scheduler service for only once during the lifetime of the activity
-   /**
-    * TODO(Hongyi): change to API function
-    */
    bindToService();
    super.onStart();
  }
@@ -397,9 +392,7 @@ public class SpeedometerApp extends TabActivity {
  protected void onStop() {
    Logger.d("onStop called");
    super.onStop();
-   /**
-    * TODO(Hongyi): change to API function
-    */
+   api.unbind();
    if (isBound) {
      unbindService(serviceConn);
      isBound = false;
@@ -415,13 +408,14 @@ public class SpeedometerApp extends TabActivity {
 
  private void quitApp() {
    Logger.d("quitApp called");
+   api.unbind();
    if (isBound) {
      unbindService(serviceConn);
      isBound = false;
    }
-   if (this.scheduler != null) {
-     Logger.d("requesting Scheduler stop");
-     scheduler.requestStop();
+   if (this.console != null) {
+     Logger.d("requesting Console stop");
+     console.requestStop();
    }
    // Force consent on next restart.
    userConsented = false;
@@ -436,11 +430,11 @@ public class SpeedometerApp extends TabActivity {
  /**
   * TODO(Hongyi): change to API function
   */
- private void doCheckin() {
-   if (scheduler != null) {
-     scheduler.handleCheckin(true);
-   }
- }
+// private void doCheckin() {
+//   if (scheduler != null) {
+//     scheduler.handleCheckin(true);
+//   }
+// }
  
  /** Set preference to indicate whether start on boot is enabled. */
  private void setStartOnBoot(boolean startOnBoot) {
@@ -461,7 +455,7 @@ public class SpeedometerApp extends TabActivity {
    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(
        getApplicationContext());
    SharedPreferences.Editor editor = prefs.edit();
-   editor.putBoolean(Config.PREF_KEY_CONSENTED, userConsented);
+   editor.putBoolean(MobiperfConfig.PREF_KEY_CONSENTED, userConsented);
    editor.commit();
  }
  
@@ -470,7 +464,7 @@ public class SpeedometerApp extends TabActivity {
   */
  private void restoreDefaultAccount() {
    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-   selectedAccount = prefs.getString(Config.PREF_KEY_SELECTED_ACCOUNT, null);
+   selectedAccount = prefs.getString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, null);
  }
  
  /**
@@ -479,7 +473,7 @@ public class SpeedometerApp extends TabActivity {
  private void restoreConsentState() {
    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(
        getApplicationContext());
-   userConsented = prefs.getBoolean(Config.PREF_KEY_CONSENTED, false);
+   userConsented = prefs.getBoolean(MobiperfConfig.PREF_KEY_CONSENTED, false);
  }
  
  /**

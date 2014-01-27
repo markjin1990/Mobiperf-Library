@@ -15,7 +15,6 @@ package com.mobiperf_library.mobiperf;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -32,28 +31,17 @@ import android.widget.TabHost;
 import android.widget.TableLayout;
 import android.widget.Toast;
 
-import com.mobiperf.measurements.DnsLookupTask;
-import com.mobiperf.measurements.DnsLookupTask.DnsLookupDesc;
-import com.mobiperf.measurements.HttpTask;
-import com.mobiperf.measurements.HttpTask.HttpDesc;
-import com.mobiperf.measurements.PingTask;
-import com.mobiperf.measurements.PingTask.PingDesc;
-import com.mobiperf.measurements.TracerouteTask;
-import com.mobiperf.measurements.TracerouteTask.TracerouteDesc;
-import com.mobiperf.measurements.UDPBurstTask;
-import com.mobiperf.measurements.UDPBurstTask.UDPBurstDesc;
-import com.mobiperf.measurements.TCPThroughputTask;
-import com.mobiperf.measurements.TCPThroughputTask.TCPThroughputDesc;
-import com.mobiperf.measurements.RRCTask;
-import com.mobiperf.measurements.RRCTask.RRCDesc;
-import com.mobiperf.util.MLabNS;
-import com.mobiperf.R;
-
-import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.mobiperf_library.MeasurementTask;
+import com.mobiperf_library.R;
+import com.mobiperf_library.api.API;
+import com.mobiperf_library.exceptions.MeasurementError;
+import com.mobiperf_library.util.Logger;
+import com.mobiperf_library.util.MLabNS;
 
 /**
  * The UI Activity that allows users to create their own measurements
@@ -69,6 +57,8 @@ public class MeasurementCreationActivity extends Activity {
   private String udpDir;
   private String tcpDir;
 
+  private API api;
+  private Console console;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -81,15 +71,19 @@ public class MeasurementCreationActivity extends Activity {
     Spinner spinner = (Spinner) findViewById(R.id.measurementTypeSpinner);
     spinnerValues = new ArrayAdapter<String>(this.getApplicationContext(), R.layout.spinner_layout);
     
-    /**
-     * TODO(Hongyi): expose getMeasurementNames and 
-     * getVisibilityForMeasurementName in API
-     */
-    for (String name : MeasurementTask.getMeasurementNames()) {
+    this.api = API.getAPI(parent, "new mobiperf");
+    this.console = parent.getConsole();
+    Logger.e("MeasurementCreationActivity: console is " + console);
+    
+    for (String name : API.getMeasurementNames()) {
       // adding list of visible measurements
-      if (MeasurementTask.getVisibilityForMeasurementName(name)) {
-        spinnerValues.add(name);
-      }
+      /**
+       * TODO(Hongyi): add getVisibilityForMeasurementName in library
+       */
+//      if (MeasurementTask.getVisibilityForMeasurementName(name)) {
+//        spinnerValues.add(name);
+//      }
+      spinnerValues.add(name);
     }
     spinnerValues.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
     spinner.setAdapter(spinnerValues);
@@ -99,10 +93,7 @@ public class MeasurementCreationActivity extends Activity {
     Button runButton = (Button) this.findViewById(R.id.runTaskButton);
     runButton.setOnClickListener(new ButtonOnClickListener());
 
-    /**
-     * TODO(Hongyi): should we allow user to directly use PingTask here?
-     */
-    this.measurementTypeUnderEdit = PingTask.TYPE;
+    this.measurementTypeUnderEdit = API.PING_TYPE;
     setupEditTextFocusChangeListener();
 
     this.udpDir = "Up";
@@ -153,17 +144,17 @@ public class MeasurementCreationActivity extends Activity {
   private void populateMeasurementSpecificArea() {
     TableLayout table = (TableLayout) this.findViewById(R.id.measurementCreationLayout);
     this.clearMeasurementSpecificViews(table);
-    if (this.measurementTypeUnderEdit.compareTo(PingTask.TYPE) == 0) {
+    if (this.measurementTypeUnderEdit.compareTo(API.PING_TYPE) == 0) {
       this.findViewById(R.id.pingView).setVisibility(View.VISIBLE);
-    } else if (this.measurementTypeUnderEdit.compareTo(HttpTask.TYPE) == 0) {
+    } else if (this.measurementTypeUnderEdit.compareTo(API.HTTP_TYPE) == 0) {
       this.findViewById(R.id.httpUrlView).setVisibility(View.VISIBLE);
-    } else if (this.measurementTypeUnderEdit.compareTo(TracerouteTask.TYPE) == 0) {
+    } else if (this.measurementTypeUnderEdit.compareTo(API.TRACEROUTE_TYPE) == 0) {
       this.findViewById(R.id.tracerouteView).setVisibility(View.VISIBLE);
-    } else if (this.measurementTypeUnderEdit.compareTo(DnsLookupTask.TYPE) == 0) {
+    } else if (this.measurementTypeUnderEdit.compareTo(API.DNSLOOKUP_TYPE) == 0) {
       this.findViewById(R.id.dnsTargetView).setVisibility(View.VISIBLE);
-    } else if (this.measurementTypeUnderEdit.compareTo(UDPBurstTask.TYPE) == 0) {
+    } else if (this.measurementTypeUnderEdit.compareTo(API.UDPBURST_TYPE) == 0) {
       this.findViewById(R.id.UDPBurstDirView).setVisibility(View.VISIBLE);
-    } else if (this.measurementTypeUnderEdit.compareTo(TCPThroughputTask.TYPE) == 0) {
+    } else if (this.measurementTypeUnderEdit.compareTo(API.TCPTHROUGHPUT_TYPE) == 0) {
       this.findViewById(R.id.TCPThroughputDirView).setVisibility(View.VISIBLE);
     }
   }
@@ -196,127 +187,77 @@ public class MeasurementCreationActivity extends Activity {
     public void onClick(View v) {
       MeasurementTask newTask = null;
       boolean showLengthWarning = false;
-      /**
-       * TODO(Hongyi): use function in API instead
-       */
+      Map<String, String> params = new HashMap<String, String>();
+      int measurementType = -1;
       try {
-        if (measurementTypeUnderEdit.equals(PingTask.TYPE)) {
+        if (measurementTypeUnderEdit.equals(API.PING_TYPE)) {
           EditText pingTargetText = (EditText) findViewById(R.id.pingTargetText);
-          Map<String, String> params = new HashMap<String, String>();
           params.put("target", pingTargetText.getText().toString());
-          PingDesc desc = new PingDesc(null,
-              Calendar.getInstance().getTime(),
-              null,
-              Config.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
-              Config.DEFAULT_USER_MEASUREMENT_COUNT,
-              MeasurementTask.USER_PRIORITY,
-              params);
-          newTask = new PingTask(desc, MeasurementCreationActivity.this.getApplicationContext());
-        } else if (measurementTypeUnderEdit.equals(HttpTask.TYPE)) {
+          measurementType = API.Ping;
+        } else if (measurementTypeUnderEdit.equals(API.HTTP_TYPE)) {
           EditText httpUrlText = (EditText) findViewById(R.id.httpUrlText);
-          Map<String, String> params = new HashMap<String, String>();
           params.put("url", httpUrlText.getText().toString());
           params.put("method", "get");
-          HttpDesc desc = new HttpDesc(null,
-              Calendar.getInstance().getTime(),
-              null,
-              Config.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
-              Config.DEFAULT_USER_MEASUREMENT_COUNT,
-              MeasurementTask.USER_PRIORITY,
-              params);
-          newTask = new HttpTask(desc, MeasurementCreationActivity.this.getApplicationContext());
-        } else if (measurementTypeUnderEdit.equals(TracerouteTask.TYPE)) {
+          measurementType = API.HTTP;
+        } else if (measurementTypeUnderEdit.equals(API.TRACEROUTE_TYPE)) {
           EditText targetText = (EditText) findViewById(R.id.tracerouteTargetText);
-          Map<String, String> params = new HashMap<String, String>();
           params.put("target", targetText.getText().toString());
-          TracerouteDesc desc = new TracerouteDesc(null,
-              Calendar.getInstance().getTime(),
-              null,
-              Config.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
-              Config.DEFAULT_USER_MEASUREMENT_COUNT,
-              MeasurementTask.USER_PRIORITY,
-              params);
-          newTask =
-              new TracerouteTask(desc, MeasurementCreationActivity.this.getApplicationContext());
+          measurementType = API.Traceroute;
           showLengthWarning = true;
-        } else if (measurementTypeUnderEdit.equals(DnsLookupTask.TYPE)) {
+        } else if (measurementTypeUnderEdit.equals(API.DNSLOOKUP_TYPE)) {
           EditText dnsTargetText = (EditText) findViewById(R.id.dnsLookupText);
-          Map<String, String> params = new HashMap<String, String>();
           params.put("target", dnsTargetText.getText().toString());
-          DnsLookupDesc desc = new DnsLookupDesc(null,
-              Calendar.getInstance().getTime(),
-              null,
-              Config.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
-              Config.DEFAULT_USER_MEASUREMENT_COUNT,
-              MeasurementTask.USER_PRIORITY,
-              params);
-          newTask =
-              new DnsLookupTask(desc, MeasurementCreationActivity.this.getApplicationContext());
-        } else if (measurementTypeUnderEdit.equals(UDPBurstTask.TYPE)) {
-          Map<String, String> params = new HashMap<String, String>();
+          measurementType = API.DNSLookup;
+        } else if (measurementTypeUnderEdit.equals(API.UDPBURST_TYPE)) {
           // TODO(dominic): Support multiple servers for UDP. For now, just
           // m-lab.
           params.put("target", MLabNS.TARGET);
           params.put("direction", udpDir);
-          UDPBurstDesc desc = new UDPBurstDesc(null,
-              Calendar.getInstance().getTime(),
-              null,
-              Config.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
-              Config.DEFAULT_USER_MEASUREMENT_COUNT,
-              MeasurementTask.USER_PRIORITY,
-              params,
-              MeasurementCreationActivity.this.getApplicationContext());
-          newTask =
-              new UDPBurstTask(desc, MeasurementCreationActivity.this.getApplicationContext());
-        } else if (measurementTypeUnderEdit.equals(TCPThroughputTask.TYPE)) {
-            Map<String, String> params = new HashMap<String, String>();
+          measurementType = API.UDPBurst;
+        } else if (measurementTypeUnderEdit.equals(API.TCPTHROUGHPUT_TYPE)) {
             params.put("target", MLabNS.TARGET);
             params.put("dir_up", tcpDir);
-            TCPThroughputDesc desc = new TCPThroughputDesc(null,
-              Calendar.getInstance().getTime(),
-              null,
-              Config.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
-              Config.DEFAULT_USER_MEASUREMENT_COUNT,
-              MeasurementTask.USER_PRIORITY,
-              params);
-            newTask = new TCPThroughputTask(desc, 
-                          MeasurementCreationActivity.this.getApplicationContext());
+            measurementType = API.TCPThroughput;
             showLengthWarning = true;
         }
+        
+        newTask = api.createTask(measurementType,
+          Calendar.getInstance().getTime(),
+          null,
+          MobiperfConfig.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
+          MobiperfConfig.DEFAULT_USER_MEASUREMENT_COUNT,
+          API.USER_PRIORITY,
+          MobiperfConfig.DEFAULT_CONTEXT_INTERVAL,
+          params);
 
         if (newTask != null) {
-          MeasurementScheduler scheduler = parent.getScheduler();
-          if (scheduler != null && scheduler.submitTask(newTask)) {
-            /*
-             * Broadcast an intent with MEASUREMENT_ACTION so that the scheduler will immediately
-             * handles the user measurement
-             */
-            /**
-             * TODO(Hongyi): maybe we don't need to broadcast it now
-             */
-            MeasurementCreationActivity.this.sendBroadcast(
-                new UpdateIntent("", UpdateIntent.MEASUREMENT_ACTION));
-            
-            SpeedometerApp parent = (SpeedometerApp) getParent();
-            TabHost tabHost = parent.getTabHost();
-            tabHost.setCurrentTabByTag(ResultsConsoleActivity.TAB_TAG);
-            String toastStr =
-                MeasurementCreationActivity.this.getString(R.string.userMeasurementSuccessToast);
-            if (showLengthWarning) {
-              toastStr += newTask.getDescriptor() + " measurements can be long. Please be patient.";
-            }
-            Toast.makeText(MeasurementCreationActivity.this, toastStr, Toast.LENGTH_LONG).show();
-
-            /**
-             * TODO(Hongyi): maybe we don't need to broadcast it now
-             */
-            if (scheduler.getCurrentTask() != null) {
-              showBusySchedulerStatus();
-            }
-          } else {
+          try {
+            api.addTask(newTask);
+          } catch (MeasurementError e) {
+            Logger.e(e.toString());
             Toast.makeText(MeasurementCreationActivity.this, R.string.userMeasurementFailureToast,
-                Toast.LENGTH_LONG).show();
+              Toast.LENGTH_LONG).show();
           }
+          Logger.e("MeasurementCreationActivity@button click: console is " + console);
+          
+          // Hongyi: broadcast the measurement start
+          console = parent.getConsole();
+          if ( console != null ) {
+            console.updateStatus("User task " + newTask.getDescriptor()
+              + " is submitted to scheduler");
+          }
+          
+
+          SpeedometerApp parent = (SpeedometerApp) getParent();
+          TabHost tabHost = parent.getTabHost();
+          tabHost.setCurrentTabByTag(ResultsConsoleActivity.TAB_TAG);
+          String toastStr =
+              MeasurementCreationActivity.this.getString(R.string.userMeasurementSuccessToast);
+          if (showLengthWarning) {
+            toastStr += newTask.getDescriptor() + " measurements can be long. Please be patient.";
+          }
+          Toast.makeText(MeasurementCreationActivity.this, toastStr, Toast.LENGTH_LONG).show();
+
         }
       } catch (InvalidParameterException e) {
         Logger.e("InvalidParameterException when creating user measurements", e);
@@ -329,37 +270,11 @@ public class MeasurementCreationActivity extends Activity {
 
   }
 
-  private void showBusySchedulerStatus() {
-    Intent intent = new Intent();
-    intent.setAction(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION);
-    intent.putExtra(
-        UpdateIntent.STATUS_MSG_PAYLOAD, getString(R.string.userMeasurementBusySchedulerToast));
-    sendBroadcast(intent);
-  }
 
   private class EditBoxFocusChangeListener implements OnFocusChangeListener {
 
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
-      /**
-       * TODO(Hongyi): This switch does not have any effect, delete it
-       */
-      switch (v.getId()) {
-        case R.id.pingTargetText:
-          /*
-           *
-           * TODO(Wenjie): Verify user input
-           */
-          break;
-        case R.id.httpUrlText:
-          /*
-           *
-           * TODO(Wenjie): Verify user input
-           */
-          break;
-        default:
-          break;
-      }
       if (!hasFocus) {
         hideKyeboard((EditText) v);
       }
@@ -378,7 +293,7 @@ public class MeasurementCreationActivity extends Activity {
        * TODO(Hongyi): expose getTypeForMeasurementName in API
        */
       measurementTypeUnderEdit =
-          MeasurementTask.getTypeForMeasurementName(spinnerValues.getItem((int) id));
+          API.getTypeForMeasurementName(spinnerValues.getItem((int) id));
       if (measurementTypeUnderEdit != null) {
         populateMeasurementSpecificArea();
       }

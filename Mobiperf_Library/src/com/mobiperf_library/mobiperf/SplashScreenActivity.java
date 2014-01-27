@@ -15,6 +15,8 @@
 
 package com.mobiperf_library.mobiperf;
 
+import com.mobiperf_library.R;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -23,8 +25,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.widget.TextView;
-
-import com.mobiperf.R;
 
 /**
  * The splash screen for Speedometer
@@ -57,6 +57,6 @@ public class SplashScreenActivity extends Activity {
         SplashScreenActivity.this.getApplication().startActivity(intent);
         SplashScreenActivity.this.finish();
       }
-    }, Config.SPLASH_SCREEN_DURATION_MSEC);
+    }, MobiperfConfig.SPLASH_SCREEN_DURATION_MSEC);
   }
 }

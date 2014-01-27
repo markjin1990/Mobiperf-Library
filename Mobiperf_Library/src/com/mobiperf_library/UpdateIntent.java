@@ -35,6 +35,11 @@ public class UpdateIntent extends Intent {
       PACKAGE_PREFIX + ".CHECKIN_RETRY_ACTION";
   public static final String MEASUREMENT_PROGRESS_UPDATE_ACTION =
       PACKAGE_PREFIX + ".MEASUREMENT_PROGRESS_UPDATE_ACTION";
+  
+  public static final String USER_RESULT_ACTION =
+      PACKAGE_PREFIX + ".USER_RESULT_ACTION";  
+  public static final String SERVER_RESULT_ACTION =
+      PACKAGE_PREFIX + ".SERVER_RESULT_ACTION";
 //  public static final String SCHEDULER_CONNECTED_ACTION =
 //      PACKAGE_PREFIX + ".SCHEDULER_CONNECTED_ACTION";
 //  public static final String SCHEDULE_UPDATE_ACTION =

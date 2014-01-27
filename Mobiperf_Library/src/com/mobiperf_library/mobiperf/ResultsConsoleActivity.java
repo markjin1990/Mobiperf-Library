@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
@@ -30,7 +31,11 @@ import android.widget.ToggleButton;
 
 import java.util.List;
 
-import com.mobiperf.R;
+import com.mobiperf_library.MeasurementResult;
+import com.mobiperf_library.R;
+import com.mobiperf_library.UpdateIntent;
+import com.mobiperf_library.api.API;
+import com.mobiperf_library.util.Logger;
 
 /**
  * The activity that provides a console and progress bar of the ongoing measurement
@@ -42,10 +47,9 @@ public class ResultsConsoleActivity extends Activity {
   private ListView consoleView;
   private ArrayAdapter<String> results;
   BroadcastReceiver receiver;
-  ProgressBar progressBar;
   ToggleButton showUserResultButton;
   ToggleButton showSystemResultButton;
-  MeasurementScheduler scheduler = null;
+  private Console console;
   boolean userResultsActive = false;
   
   @Override
@@ -53,19 +57,11 @@ public class ResultsConsoleActivity extends Activity {
     Logger.d("ResultsConsoleActivity.onCreate called");
     super.onCreate(savedInstanceState);
     setContentView(R.layout.results);
-    IntentFilter filter = new IntentFilter();
-    filter.addAction(UpdateIntent.SCHEDULER_CONNECTED_ACTION);
-    filter.addAction(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION);
-
+    
     this.consoleView = (ListView) this.findViewById(R.id.resultConsole);
     this.results = new ArrayAdapter<String>(getApplicationContext(), R.layout.list_item);
     this.consoleView.setAdapter(this.results);
-    /**
-     * TODO(Hongyi): still keep progress bar?
-     */
-    this.progressBar = (ProgressBar) this.findViewById(R.id.progress_bar);
-    this.progressBar.setMax(Config.MAX_PROGRESS_BAR_VALUE);
-    this.progressBar.setProgress(Config.MAX_PROGRESS_BAR_VALUE);
+    
     showUserResultButton = (ToggleButton) findViewById(R.id.showUserResults);
     showSystemResultButton = (ToggleButton) findViewById(R.id.showSystemResults);
     showUserResultButton.setChecked(true);
@@ -82,30 +78,38 @@ public class ResultsConsoleActivity extends Activity {
     };
     showUserResultButton.setOnCheckedChangeListener(buttonClickListener);
     showSystemResultButton.setOnCheckedChangeListener(buttonClickListener);
+
+
+    // Hongyi: get console singleton
+    this.console = ((SpeedometerApp)this.getParent()).getConsole();
     
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(MobiperfIntent.SCHEDULER_CONNECTED_ACTION);
+//    filter.addAction(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION);
+    filter.addAction(UpdateIntent.USER_RESULT_ACTION);
+    filter.addAction(UpdateIntent.SERVER_RESULT_ACTION);
     this.receiver = new BroadcastReceiver() {
       @Override
       // All onXyz() callbacks are single threaded
       public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION)) {
-          int progress = intent.getIntExtra(UpdateIntent.PROGRESS_PAYLOAD, Config.INVALID_PROGRESS);
-          int priority = intent.getIntExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD, 
-              MeasurementTask.INVALID_PRIORITY);
-          // Show user results if there is currently a user measurement running
-          if (priority == MeasurementTask.USER_PRIORITY) {
-            Logger.d("progress update");
-            switchBetweenResults(true);
-          }
-          upgradeProgress(progress, Config.MAX_PROGRESS_BAR_VALUE);
-        } else if (intent.getAction().equals(UpdateIntent.SCHEDULER_CONNECTED_ACTION)) {
+        if ( intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ) {
+          Logger.d("receive user results");
+          switchBetweenResults(true);
+          console.updateStatus(null);
+          console.persistState();
+        }
+        else if ( intent.getAction().equals(UpdateIntent.SERVER_RESULT_ACTION) ) {
+          getConsoleContentFromScheduler();
+          console.updateStatus(null);
+          console.persistState();
+        }
+        else if (intent.getAction().equals(MobiperfIntent.SCHEDULER_CONNECTED_ACTION)) {
           Logger.d("scheduler connected");
           switchBetweenResults(userResultsActive);
         }
       }
     };
     this.registerReceiver(this.receiver, filter);
-    
-    getConsoleContentFromScheduler();
   }
   
   /**
@@ -125,17 +129,17 @@ public class ResultsConsoleActivity extends Activity {
   /**
    *  Upgrades the progress bar in the UI.
    *  */
-  private void upgradeProgress(int progress, int max) {
-    Logger.d("Progress is " + progress);
-    if (progress >= 0 && progress <= max) {
-      progressBar.setProgress(progress);
-      this.progressBar.setVisibility(View.VISIBLE);
-    } else {
-      // UserMeasurementTask broadcast a progress greater than max to indicate the termination of
-      // the measurement.
-      this.progressBar.setVisibility(View.INVISIBLE);
-    }
-  }
+//  private void upgradeProgress(int progress, int max) {
+//    Logger.d("Progress is " + progress);
+//    if (progress >= 0 && progress <= max) {
+//      progressBar.setProgress(progress);
+//      this.progressBar.setVisibility(View.VISIBLE);
+//    } else {
+//      // UserMeasurementTask broadcast a progress greater than max to indicate the termination of
+//      // the measurement.
+//      this.progressBar.setVisibility(View.INVISIBLE);
+//    }
+//  }
   
   @Override
   protected void onDestroy() {
@@ -149,23 +153,22 @@ public class ResultsConsoleActivity extends Activity {
    */
   private synchronized void getConsoleContentFromScheduler() {
     Logger.d("ResultsConsoleActivity.getConsoleContentFromScheduler called");
-    if (scheduler == null) {
-      SpeedometerApp parent = (SpeedometerApp) getParent();
-      scheduler = parent.getScheduler();
-    }
     // Scheduler may have not had time to start yet. When it does, the intent above will call this
     // again.
-    if (scheduler != null) {
+    if (console != null) {
       Logger.d("Updating measurement results from thread " + Thread.currentThread().getName());
       results.clear();
       final List<String> scheduler_results =
-          (userResultsActive ? scheduler.getUserResults() : scheduler.getSystemResults());
+          (userResultsActive ? console.getUserResults() : console.getSystemResults());
       for (String result : scheduler_results) {
         results.add(result);
       }
       runOnUiThread(new Runnable() {
         public void run() { results.notifyDataSetChanged(); }
       });
+    }
+    else {
+      Logger.e("Console is not instantialized!");
     }
   }
 }

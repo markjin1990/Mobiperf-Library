@@ -21,7 +21,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import com.mobiperf.R;
+import com.mobiperf_library.R;
+import com.mobiperf_library.util.Logger;
 
 /**
 * A broadcast receiver that starts the Speedometer service upon the BOOT_COMPLETED event.
@@ -31,11 +32,11 @@ public class WatchdogBootReceiver extends BroadcastReceiver {
  @Override
  public final void onReceive(Context context, Intent intent) {
    Logger.i("Boot intent received.");
-   Intent serviceIntent = new Intent(context, MeasurementScheduler.class);
+   Intent serviceIntent = new Intent(context, Console.class);
    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
    
    if (prefs.getBoolean(context.getString(R.string.startOnBootPrefKey),
-       Config.DEFAULT_START_ON_BOOT)) {
+       MobiperfConfig.DEFAULT_START_ON_BOOT)) {
      Logger.i("Starting MeasurementScheduler from watchdog");
      context.startService(serviceIntent);
    }

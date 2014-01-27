@@ -39,7 +39,7 @@ import java.util.AbstractCollection;
 import java.util.Date;
 import java.util.HashMap;
 
-import com.mobiperf.R;
+import com.mobiperf_library.R;
 
 /**
  * Activity that shows the current measurement schedule of the scheduler
@@ -47,7 +47,6 @@ import com.mobiperf.R;
 public class MeasurementScheduleConsoleActivity extends Activity {
   public static final String TAB_TAG = "MEASUREMENT_SCHEDULE";
   
-  private MeasurementScheduler scheduler;
   private SpeedometerApp parent;
   private ListView consoleView;
   private TextView lastCheckinTimeText;
@@ -72,7 +71,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
     checkinButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
-        doCheckin();
+//        doCheckin();
       }
     });
 
@@ -95,20 +94,20 @@ public class MeasurementScheduleConsoleActivity extends Activity {
      *  back to the user, including measurement results.
      *  It is more flexable and scalable 
      */
-    // Register activity specific BroadcastReceiver here    
-    IntentFilter filter = new IntentFilter();
-    filter.addAction(UpdateIntent.SCHEDULER_CONNECTED_ACTION);
-    filter.addAction(UpdateIntent.SYSTEM_STATUS_UPDATE_ACTION);
-    this.receiver = new BroadcastReceiver() {
-      @Override
-      public void onReceive(Context context, Intent intent) {
-        Logger.d("MeasurementConsole got intent");
-        /* The content of the console is maintained by the scheduler. We simply hook up the 
-         * view with the content here. */
-        updateConsole();
-      }
-    };
-    registerReceiver(receiver, filter);
+//    // Register activity specific BroadcastReceiver here    
+//    IntentFilter filter = new IntentFilter();
+//    filter.addAction(MobiperfIntent.SCHEDULER_CONNECTED_ACTION);
+//    filter.addAction(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION);
+//    this.receiver = new BroadcastReceiver() {
+//      @Override
+//      public void onReceive(Context context, Intent intent) {
+//        Logger.d("MeasurementConsole got intent");
+//        /* The content of the console is maintained by the scheduler. We simply hook up the 
+//         * view with the content here. */
+//        updateConsole();
+//      }
+//    };
+//    registerReceiver(receiver, filter);
   }
   
   /**
@@ -125,7 +124,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
   @Override
   protected void onResume() {
     super.onResume();
-    updateConsole();
+//    updateConsole();
   }
   
   @Override
@@ -134,81 +133,81 @@ public class MeasurementScheduleConsoleActivity extends Activity {
     unregisterReceiver(receiver);
   }
   
-  /**
-   * Handles the deletion of the measurement tasks when the user clicks the context menu
-   */
-  /**
-   * TODO(Hongyi): Currently the server scheduled task doesn't have client key,
-   * so it cannot be cancelled by any client.
-   * Shall we allow user to cancel server task by cancelTask(taskId, null)?
-   */
-  @Override
-  public boolean onContextItemSelected(MenuItem item) {
-    AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-    switch (item.getItemId()) {
-      case R.id.ctxMenuDeleteTask:
-        scheduler = parent.getScheduler();
-        if (scheduler != null) {
-          String selectedTaskString = consoleContent.getItem(longClickedItemPosition);
-          String taskKey = taskMap.get(selectedTaskString);
-          if (taskKey != null) {
-            scheduler.removeTaskByKey(taskKey);
-          }
-        }
-        updateConsole();
-        return true;
-      default:
-    }
-    return false;
-  }
-
-  /**
-   * TODO(Hongyi): Better to track last check-in time in this class rather
-   * than in scheduler.
-   */
-  private void updateLastCheckinTime() {
-    Logger.i("updateLastCheckinTime() called");
-    scheduler = parent.getScheduler();
-    if (scheduler != null) {
-      Date lastCheckin = scheduler.getLastCheckinTime();
-      if (lastCheckin != null) {
-        lastCheckinTimeText.setText("Last checkin " + lastCheckin);
-      } else {
-        lastCheckinTimeText.setText("No checkins yet");
-      }
-    }
-  }
-
-  /**
-   * TODO(Hongyi): If we return check-in task list by intent, we don't need
-   * those function in scheduler
-   */
-  private void updateConsole() {
-    Logger.i("updateConsole() called");
-    scheduler = parent.getScheduler();
-    if (scheduler != null) {
-      AbstractCollection<MeasurementTask> tasks = scheduler.getTaskQueue();
-      consoleContent.clear();
-      taskMap.clear();
-      for (MeasurementTask task : tasks) {
-        String taskStr = task.toString();
-        consoleContent.add(taskStr);
-        taskMap.put(taskStr, task.getDescription().key);
-      }
-    }
-    updateLastCheckinTime();
-  }
-
-  /**
-   * TODO(Hongyi): shall we expose the forced check-in function in API?
-   */
-  private void doCheckin() {
-    Logger.i("doCheckin() called");
-    scheduler = parent.getScheduler();
-    if (scheduler != null) {
-      lastCheckinTimeText.setText("Checking in...");
-      scheduler.handleCheckin(true);
-    }
-  }
-  
+//  /**
+//   * Handles the deletion of the measurement tasks when the user clicks the context menu
+//   */
+//  /**
+//   * TODO(Hongyi): Currently the server scheduled task doesn't have client key,
+//   * so it cannot be cancelled by any client.
+//   * Shall we allow user to cancel server task by cancelTask(taskId, null)?
+//   */
+//  @Override
+//  public boolean onContextItemSelected(MenuItem item) {
+//    AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+//    switch (item.getItemId()) {
+//      case R.id.ctxMenuDeleteTask:
+//        scheduler = parent.getScheduler();
+//        if (scheduler != null) {
+//          String selectedTaskString = consoleContent.getItem(longClickedItemPosition);
+//          String taskKey = taskMap.get(selectedTaskString);
+//          if (taskKey != null) {
+//            scheduler.removeTaskByKey(taskKey);
+//          }
+//        }
+//        updateConsole();
+//        return true;
+//      default:
+//    }
+//    return false;
+//  }
+//
+//  /**
+//   * TODO(Hongyi): Better to track last check-in time in this class rather
+//   * than in scheduler.
+//   */
+//  private void updateLastCheckinTime() {
+//    Logger.i("updateLastCheckinTime() called");
+//    scheduler = parent.getScheduler();
+//    if (scheduler != null) {
+//      Date lastCheckin = scheduler.getLastCheckinTime();
+//      if (lastCheckin != null) {
+//        lastCheckinTimeText.setText("Last checkin " + lastCheckin);
+//      } else {
+//        lastCheckinTimeText.setText("No checkins yet");
+//      }
+//    }
+//  }
+//
+//  /**
+//   * TODO(Hongyi): If we return check-in task list by intent, we don't need
+//   * those function in scheduler
+//   */
+//  private void updateConsole() {
+//    Logger.i("updateConsole() called");
+//    scheduler = parent.getScheduler();
+//    if (scheduler != null) {
+//      AbstractCollection<MeasurementTask> tasks = scheduler.getTaskQueue();
+//      consoleContent.clear();
+//      taskMap.clear();
+//      for (MeasurementTask task : tasks) {
+//        String taskStr = task.toString();
+//        consoleContent.add(taskStr);
+//        taskMap.put(taskStr, task.getDescription().key);
+//      }
+//    }
+//    updateLastCheckinTime();
+//  }
+//
+//  /**
+//   * TODO(Hongyi): shall we expose the forced check-in function in API?
+//   */
+//  private void doCheckin() {
+//    Logger.i("doCheckin() called");
+//    scheduler = parent.getScheduler();
+//    if (scheduler != null) {
+//      lastCheckinTimeText.setText("Checking in...");
+//      scheduler.handleCheckin(true);
+//    }
+//  }
+//  
 }
