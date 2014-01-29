@@ -68,6 +68,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
     this.consoleView.setAdapter(consoleContent);
     lastCheckinTimeText = (TextView)this.findViewById(R.id.lastCheckinTime);
     Button checkinButton = (Button) this.findViewById(R.id.checkinButton);
+    checkinButton.setEnabled(false);
     checkinButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -130,7 +131,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    unregisterReceiver(receiver);
+//    unregisterReceiver(receiver);//TODO(Ashkan): I have commented this line. Check that later.
   }
   
 //  /**
