@@ -100,13 +100,19 @@ public final class API {
   private API(Context parent, String clientKey) {
     this.parent = parent;
     this.clientKey = clientKey;
+    Logger.e("API-> API()");
     bind();
   }
 
   public static API getAPI(Context parent, String clientKey) {
+	Logger.e("API-> getAPI()");
     if ( apiObject == null ) {
+      Logger.e("API-> getAPI() 2");	
       apiObject = new API(parent, clientKey);
+    }else{
+    	apiObject.bind();
     }
+    
     return apiObject;
   }
   
@@ -171,6 +177,7 @@ public final class API {
     @Override
     public void onServiceConnected(ComponentName className, IBinder service) {
       Logger.d("onServiceConnected called.....");
+      Logger.e("API -> onServiceConnected called");
       // We've bound to a Messenger and get Messenger instance
       mSchedulerMessenger = new Messenger(service);
       isBound = true;
@@ -199,31 +206,42 @@ public final class API {
 
   public Messenger getScheduler() {
       if (isBound) {
+    	  Logger.e("API-> getScheduler 1");
           return mSchedulerMessenger;
       } else {
-          bind();
+    	  Logger.e("API-> getScheduler 2");
+          
           // TODO(Hongyi): currently always return null
           if ( isBound ) {
             return mSchedulerMessenger;
           }
           else {
+        	  
             return null;
           }
       }
   }
   
   public void bind() {
-    Logger.d("MainActivity-> bindToService called");
+    Logger.e("API-> bind() called "+isBindingToService+" "+isBound);
     if (!isBindingToService && !isBound) {
+    	Logger.e("API-> bind() called 2");
         // Bind to the scheduler service if it is not bounded
         Intent intent = new Intent("com.mobiperf_library.MeasurementScheduler");
-        parent.bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
+//        parent.startService(intent);
+        parent.getApplicationContext().bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
+//        parent.bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
+//        if(!(parent.bindService(intent, serviceConn, Context.BIND_AUTO_CREATE))){
+//        	parent.startService(intent);
+//        }
         isBindingToService = true;
     }
   }
   
   public void unbind() {
+	Logger.e("API-> unbind called");
     if (isBound) {
+    	Logger.e("API-> unbind called 2");
       // Hongyi: unregister client messenger in the service
       Message msg = Message.obtain(null, Config.MSG_UNREGISTER_CLIENT);
       Bundle data = new Bundle();
@@ -235,7 +253,7 @@ public final class API {
         // Service crushed, we can count on soon being disconnected
         // so we don't need to do anything
       }
-      parent.unbindService(serviceConn);
+      parent.getApplicationContext().unbindService(serviceConn);
       isBound = false;
     }
   }
