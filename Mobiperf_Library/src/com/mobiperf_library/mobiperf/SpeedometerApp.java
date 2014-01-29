@@ -400,6 +400,13 @@ public class SpeedometerApp extends TabActivity {
  }
  
  @Override
+ protected void onResume() {
+   Logger.d("Hongyi: onResume called");
+   bindToService();
+   api.bind();
+   super.onResume();
+ }
+ @Override
  protected void onDestroy() {
    Logger.d("onDestroy called");
    super.onDestroy();
