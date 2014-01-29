@@ -77,6 +77,7 @@ public class SpeedometerApp extends TabActivity {
    @Override
    public void onServiceConnected(ComponentName className, IBinder service) {
      Logger.d("onServiceConnected called");
+     Logger.e("SpeedometerApp-> onServiceConnected called");
      // We've bound to LocalService, cast the IBinder and get LocalService
      // instance
      ConsoleBinder binder = (ConsoleBinder) service;
@@ -97,24 +98,30 @@ public class SpeedometerApp extends TabActivity {
    @Override
    public void onServiceDisconnected(ComponentName arg0) {
      Logger.d("onServiceDisconnected called");
+     Logger.e("SpeedometerApp-> onServiceDisconnected called");
      isBound = false;
    }
  };
  
  /** Returns the console singleton instance. Should only be called from the UI thread. */
  public Console getConsole() {
+   Logger.e("SpeedometerApp-> getConsole called"); 
    if (isBound) {
+	   Logger.e("SpeedometerApp-> getConsole called 1");
      return this.console;
    } else {
+	   Logger.e("SpeedometerApp-> getConsole called 2");
      bindToService();
      return null;
    }
  }
  
  private void bindToService() {
+   Logger.e("SpeedometerApp-> bindToService called "+isBindingToService+" "+isBound);
    if (!isBindingToService && !isBound) {
      // Bind to the scheduler service if it is not bounded
      Logger.d("Bind to console is called");
+     Logger.e("SpeedometerApp-> bindToService called 2");
      Intent intent = new Intent(this, Console.class);
      bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
      isBindingToService = true;
@@ -201,6 +208,7 @@ public class SpeedometerApp extends TabActivity {
  @Override
  protected void onCreate(Bundle savedInstanceState) {
    Logger.d("onCreate called");
+   Logger.e("SpeedometerApp-> onCreate()");
    super.onCreate(savedInstanceState);
    setContentView(R.layout.main);
    
@@ -383,6 +391,7 @@ public class SpeedometerApp extends TabActivity {
  @Override
  protected void onStart() {
    Logger.d("onStart called");
+   Logger.e("SpeedometerApp-> onStart called");
    // Bind to the scheduler service for only once during the lifetime of the activity
    bindToService();
    super.onStart();
@@ -391,6 +400,7 @@ public class SpeedometerApp extends TabActivity {
  @Override
  protected void onStop() {
    Logger.d("onStop called");
+   Logger.e("SpeedometerApp-> onStop called");
    super.onStop();
    api.unbind();
    if (isBound) {
@@ -409,11 +419,13 @@ public class SpeedometerApp extends TabActivity {
  @Override
  protected void onDestroy() {
    Logger.d("onDestroy called");
+   Logger.e("SpeedometerApp-> onDestroy called");
    super.onDestroy();
    this.unregisterReceiver(this.receiver);
  }
 
  private void quitApp() {
+   Logger.e("SpeedometerApp-> quitApp called");
    Logger.d("quitApp called");
    api.unbind();
    if (isBound) {
