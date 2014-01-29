@@ -110,6 +110,7 @@ public final class Console extends Service{
         } else if (intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ||
             intent.getAction().equals(UpdateIntent.SERVER_RESULT_ACTION)) {
           Logger.d("MeasurementIntent update intent received");
+          Logger.e("MeasurementIntent update intent received");
           updateResultsConsole(intent);
         } else if (intent.getAction().equals(MobiperfIntent.MSG_ACTION)) {
           String msg = intent.getExtras().getString(MobiperfIntent.STRING_PAYLOAD);
@@ -436,9 +437,11 @@ public final class Console extends Service{
     if ( intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION)) {
       Logger.d("Get user result");
       resultList = userResults;
+      Logger.e("Console-> user result is received.");
     }
     else if ( intent.getAction().equals(UpdateIntent.SERVER_RESULT_ACTION)) {
       Logger.d("Get server result");
+      Logger.e("Console-> server result is received.");
       resultList = systemResults;
     }
     

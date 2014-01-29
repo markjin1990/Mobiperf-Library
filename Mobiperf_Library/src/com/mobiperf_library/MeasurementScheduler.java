@@ -63,7 +63,7 @@ public class MeasurementScheduler extends Service{
 
   private ExecutorService measurementExecutor;
   private BroadcastReceiver broadcastReceiver;
-  private boolean pauseRequested = true;
+  private boolean pauseRequested = false;//TODO(ASHNIK)
   private boolean stopRequested = false;
   public boolean isSchedulerStarted =  false;
 
@@ -128,9 +128,11 @@ public class MeasurementScheduler extends Service{
     this.checkinRetryCnt = 0;
     this.checkinTask = new CheckinTask();
 
-    this.pauseRequested = true;
+    this.pauseRequested = false;//TODO(ASHNIK)
     this.stopRequested = false;
     phoneUtils = PhoneUtils.getPhoneUtils();
+    
+    setCheckinInterval(Config.MIN_CHECKIN_INTERVAL_SEC);//TODO(Ashkan)
 
     // Register activity specific BroadcastReceiver here    
     IntentFilter filter = new IntentFilter();
@@ -689,6 +691,7 @@ public class MeasurementScheduler extends Service{
 
     for (MeasurementTask task : tasksFromServer) {
       Logger.i("added task: " + task.toString());
+      task.setKey("new mobiperf");//TODO(ASHNIK) temporary fix, change it later
       this.mainQueue.add(task);
     }
   }
