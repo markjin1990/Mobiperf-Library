@@ -65,7 +65,7 @@ public final class Console extends Service{
   private ArrayList<String> userResults;
   private ArrayList<String> systemResults;
   private ArrayList<String> systemConsole;
-  private ArrayList<MeasurementTask> userTasks;
+  private volatile ArrayList<MeasurementTask> userTasks;
   /**
    * The Binder class that returns an instance of running scheduler 
    */
@@ -114,7 +114,6 @@ public final class Console extends Service{
         } else if (intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ||
             intent.getAction().equals(UpdateIntent.SERVER_RESULT_ACTION)) {
           Logger.d("MeasurementIntent update intent received");
-          Logger.e("MeasurementIntent update intent received");
           updateResultsConsole(intent);
         } else if (intent.getAction().equals(MobiperfIntent.MSG_ACTION)) {
           String msg = intent.getExtras().getString(MobiperfIntent.STRING_PAYLOAD);
@@ -465,6 +464,8 @@ public final class Console extends Service{
         else {
           this.failedMeasurementCnt++;
         }
+        String taskId=intent.getStringExtra(UpdateIntent.TASKID_PAYLOAD);
+        removeUserTask(taskId);
         insertStringToConsole(resultList, results[i].toString());
       }
     }
@@ -499,10 +500,14 @@ public final class Console extends Service{
   }
   
   public synchronized void removeUserTask(String taskId){
+	  MeasurementTask mt=null;
 	  for(MeasurementTask m: userTasks){
 		  if(m.getTaskId().equals(taskId)){
-			  userTasks.remove(m);
+			  mt=m;
 		  }
+	  }
+	  if(mt!=null){
+		  userTasks.remove(mt);
 	  }
   }
   

@@ -36,6 +36,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import java.util.AbstractCollection;
@@ -47,6 +48,8 @@ import java.util.List;
 import com.mobiperf_library.MeasurementTask;
 import com.mobiperf_library.R;
 import com.mobiperf_library.UpdateIntent;
+import com.mobiperf_library.api.API;
+import com.mobiperf_library.exceptions.MeasurementError;
 import com.mobiperf_library.util.Logger;
 
 /**
@@ -57,6 +60,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 
 	private SpeedometerApp parent;
 	private Console console;
+	private API api;
 	
 	private TaskItemAdapter adapter;
 	private ArrayList<TaskItem> taskItems= new ArrayList<TaskItem>();
@@ -65,8 +69,8 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 	//  private TextView lastCheckinTimeText;
 //	private ArrayAdapter<String> consoleContent;
 	// Maps the toString() of a measurementTask to its key
-	private HashMap<String, String> taskMap;
-	private int longClickedItemPosition = -1;
+//	private HashMap<String, String> taskMap;
+//	private int longClickedItemPosition = -1;
 	private BroadcastReceiver receiver;
 
 	@Override
@@ -75,15 +79,12 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 		this.setContentView(R.layout.measurement_schedule);
 		
 		this.adapter= new TaskItemAdapter(this, R.layout.measurement_schedule, taskItems);
-		TaskItem t=new TaskItem();
-		t.setDescription("Hello\nHello");
-		taskItems.add(t);
-		TaskItem t2=new TaskItem();
-		t2.setDescription("Hello\nHello\nHello");
-		taskItems.add(t2);
+		
 
-		taskMap = new HashMap<String, String>();
+//		taskMap = new HashMap<String, String>();
 		parent = (SpeedometerApp) this.getParent();
+		this.api = API.getAPI(parent, "new mobiperf");
+		
 		this.console = parent.getConsole();
 		
 //		consoleContent = new ArrayAdapter<String>(this, R.layout.list_item);
@@ -100,7 +101,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 			 */
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-				longClickedItemPosition = position;
+//				longClickedItemPosition = position;
 				return false;
 			}
 		});
@@ -113,25 +114,18 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 		 *  It is more flexable and scalable 
 		 */
 		//    // Register activity specific BroadcastReceiver here    
-		    IntentFilter filter = new IntentFilter();
+//		    IntentFilter filter = new IntentFilter();
 		    //TODO(Ashkan) change it to MobiperfIntent
-		    filter.addAction(UpdateIntent.USER_RESULT_ACTION);
+//		    filter.addAction(UpdateIntent.USER_RESULT_ACTION);
 		    
-		    this.receiver = new BroadcastReceiver() {
-				      @Override
-				      public void onReceive(Context context, Intent intent) {
-				    	  if ( intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ) {
-				    		  //remove from the tasks
-				    		//updateConsole
-				    	  }
-//				    	else if(intent.getAction().equals(MobiperfIntent.MEASUREMENT_ADDED_ACTION)){
-//				    		  updateTasksFromConsole();
-//				    		  Logger.e("----------------------");
-//				    	  }
-				    	  
-				      }
-		    };
-		    this.registerReceiver(this.receiver, filter);
+//		    this.receiver = new BroadcastReceiver() {
+//				      @Override
+//				      public void onReceive(Context context, Intent intent) {
+//				    	  if ( intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ) {
+//				    		  }
+//				      }
+//		    };
+//		    this.registerReceiver(this.receiver, filter);
 		//        Logger.d("MeasurementConsole got intent");
 		//        /* The content of the console is maintained by the scheduler. We simply hook up the 
 		//         * view with the content here. */
@@ -203,10 +197,17 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 				cancelButton.setOnClickListener(new View.OnClickListener() {
 					private TaskItem taskitem;//you can get task id from TaskItem
 					 public void onClick(View v) {
-						 TaskItemAdapter.this.remove(taskitem);
-						 TaskItemAdapter.this.notifyDataSetChanged();
-						 console.removeUserTask(taskitem.getTaskId());
-						 //TODO cancel task
+						 try {
+							MeasurementScheduleConsoleActivity.this.api.cancelTask(taskitem.getTaskId());
+							console.removeUserTask(taskitem.getTaskId());
+							TaskItemAdapter.this.remove(taskitem);
+							TaskItemAdapter.this.notifyDataSetChanged();
+							
+						} catch (MeasurementError e) {
+							Logger.e(e.toString());
+				            Toast.makeText(MeasurementScheduleConsoleActivity.this, R.string.cancelUserMeasurementFailureToast,
+				              Toast.LENGTH_LONG).show();
+						}
 					 }
 
 					public 	OnClickListener init(TaskItem ti) {

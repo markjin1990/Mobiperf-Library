@@ -36,6 +36,7 @@
     <string name="notificationServiceRunning">MobiPerf service is running</string>
     <string name="userMeasurementSuccessToast">Measurement is running. Results will show up shortly.</string>
     <string name="userMeasurementFailureToast">The scheduler is busy, please run the measurement later</string>
+    <string name="cancelUserMeasurementFailureToast">Cancelling this task is failed</string>
     <string name="userMeasurementBusySchedulerToast">The scheduler is busy, your measurement will start shortly</string>
     <string name="invalidParameterExceptionMeasurementToast">Some parameters are not correct. Please make sure all measurement parameters are set properly.</string>
     <string name="ioExceptionMeasurementToast">Failed to run test. It\'s possible there is no network connection. Please make sure you have a network connection before running tests.</string>
