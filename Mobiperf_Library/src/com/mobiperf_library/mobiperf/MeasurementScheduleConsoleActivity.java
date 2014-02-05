@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 
 import com.mobiperf_library.R;
+import com.mobiperf_library.util.Logger;
 
 /**
  * Activity that shows the current measurement schedule of the scheduler
@@ -157,8 +158,36 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 			}
 			TaskItem  item = taskItems.get(position);
 			if(item!=null){
+				String taskId=item.getTaskId();
 				ToggleButton pauseButton=(ToggleButton) (v.findViewById(R.id.pausebutton));
+				pauseButton.setOnClickListener(new View.OnClickListener() {
+					private String id;
+					 public void onClick(View v) {
+		            	 boolean paused = ((ToggleButton) v).isChecked();
+		            	    
+		            	    if (paused) {
+		            	        
+		            	    } else {
+
+		            	    }
+		             }
+
+					public 	OnClickListener init(String taskId) {
+						id=taskId;
+						return this;
+					}
+		         }.init(taskId));
 				Button cancelButton=(Button)(v.findViewById(R.id.cancelbutton));
+				cancelButton.setOnClickListener(new View.OnClickListener() {
+					private String id;
+					 public void onClick(View v) {
+					 }
+
+					public 	OnClickListener init(String taskId) {
+						id=taskId;
+						return this;
+					}
+		         }.init(taskId));
 				TextView text= (TextView) (v.findViewById(R.id.taskdesc));
 				text.setText(item.getDescription());
 				//TODO assign text
@@ -171,6 +200,13 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 
 	class TaskItem{
 		private String description;
+		private String taskId;
+		public void setTaskId(String id){
+			this.taskId=id;
+		}
+		public String getTaskId(){
+			return this.taskId;
+		}
 		public void setDescription(String desc){
 			this.description=desc;
 		}
