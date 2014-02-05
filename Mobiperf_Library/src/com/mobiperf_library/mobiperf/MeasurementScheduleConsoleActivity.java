@@ -72,10 +72,10 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 		
 		this.adapter= new TaskItemAdapter(this, R.layout.measurement_schedule, taskItems);
 		TaskItem t=new TaskItem();
-		t.setDescription("Salam\nSalam");
+		t.setDescription("Hello\nHello");
 		taskItems.add(t);
 		TaskItem t2=new TaskItem();
-		t2.setDescription("Salam\nSalam\nSalam");
+		t2.setDescription("Hello\nHello\nHello");
 		taskItems.add(t2);
 
 		taskMap = new HashMap<String, String>();
@@ -161,7 +161,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 				String taskId=item.getTaskId();
 				ToggleButton pauseButton=(ToggleButton) (v.findViewById(R.id.pausebutton));
 				pauseButton.setOnClickListener(new View.OnClickListener() {
-					private String id;
+					private String id;//taskId
 					 public void onClick(View v) {
 		            	 boolean paused = ((ToggleButton) v).isChecked();
 		            	    
@@ -179,15 +179,17 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 		         }.init(taskId));
 				Button cancelButton=(Button)(v.findViewById(R.id.cancelbutton));
 				cancelButton.setOnClickListener(new View.OnClickListener() {
-					private String id;
+					private TaskItem taskitem;//you can get task id from TaskItem
 					 public void onClick(View v) {
+						 TaskItemAdapter.this.remove(taskitem);
+						 TaskItemAdapter.this.notifyDataSetChanged();
 					 }
 
-					public 	OnClickListener init(String taskId) {
-						id=taskId;
+					public 	OnClickListener init(TaskItem ti) {
+						taskitem=ti;
 						return this;
 					}
-		         }.init(taskId));
+		         }.init(item));
 				TextView text= (TextView) (v.findViewById(R.id.taskdesc));
 				text.setText(item.getDescription());
 				//TODO assign text
