@@ -245,6 +245,8 @@ public class MeasurementCreationActivity extends Activity {
           if ( console != null ) {
             console.updateStatus("User task " + newTask.getDescriptor()
               + " is submitted to scheduler");
+            console.addUserTask(newTask);
+            
           }
           
 

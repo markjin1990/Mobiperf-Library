@@ -24,6 +24,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import com.google.myjson.reflect.TypeToken;
 import com.mobiperf_library.MeasurementResult;
+import com.mobiperf_library.MeasurementTask;
 import com.mobiperf_library.R;
 import com.mobiperf_library.UpdateIntent;
 import com.mobiperf_library.util.Logger;
@@ -64,6 +65,7 @@ public final class Console extends Service{
   private ArrayList<String> userResults;
   private ArrayList<String> systemResults;
   private ArrayList<String> systemConsole;
+  private ArrayList<MeasurementTask> userTasks;
   /**
    * The Binder class that returns an instance of running scheduler 
    */
@@ -100,6 +102,8 @@ public final class Console extends Service{
     filter.addAction(MobiperfIntent.MSG_ACTION);
     filter.addAction(UpdateIntent.USER_RESULT_ACTION);
     filter.addAction(UpdateIntent.SERVER_RESULT_ACTION);
+    
+    
     
     broadcastReceiver = new BroadcastReceiver() {
       // Handles various broadcast intents.
@@ -403,6 +407,9 @@ public final class Console extends Service{
 
     systemConsole = new ArrayList<String>();
     restoreConsole(systemConsole, MobiperfConfig.PREF_KEY_SYSTEM_CONSOLE);
+    
+    userTasks=new ArrayList<MeasurementTask>();
+    //TODO OOOOOOO
   }
 
   /**
@@ -484,5 +491,22 @@ public final class Console extends Service{
         console.remove(console.size() - 1);
       }
     }
+  }
+  
+  
+  public synchronized void addUserTask(MeasurementTask task){
+	  userTasks.add(task);
+  }
+  
+  public synchronized void removeUserTask(String taskId){
+	  for(MeasurementTask m: userTasks){
+		  if(m.getTaskId().equals(taskId)){
+			  userTasks.remove(m);
+		  }
+	  }
+  }
+  
+  public synchronized  List<MeasurementTask> getUserTasks(){
+	  return Collections.unmodifiableList(userTasks);
   }
 }

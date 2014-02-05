@@ -82,7 +82,7 @@ public class ResultsConsoleActivity extends Activity {
 
     // Hongyi: get console singleton
     this.console = ((SpeedometerApp)this.getParent()).getConsole();
-    
+    //TODO(Ashkan->Hongyi) change it to MobiperfIntent
     IntentFilter filter = new IntentFilter();
     filter.addAction(MobiperfIntent.SCHEDULER_CONNECTED_ACTION);
 //    filter.addAction(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION);

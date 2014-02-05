@@ -42,8 +42,11 @@ import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
+import com.mobiperf_library.MeasurementTask;
 import com.mobiperf_library.R;
+import com.mobiperf_library.UpdateIntent;
 import com.mobiperf_library.util.Logger;
 
 /**
@@ -53,6 +56,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 	public static final String TAB_TAG = "MEASUREMENT_SCHEDULE";
 
 	private SpeedometerApp parent;
+	private Console console;
 	
 	private TaskItemAdapter adapter;
 	private ArrayList<TaskItem> taskItems= new ArrayList<TaskItem>();
@@ -80,9 +84,13 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 
 		taskMap = new HashMap<String, String>();
 		parent = (SpeedometerApp) this.getParent();
+		this.console = parent.getConsole();
+		
 //		consoleContent = new ArrayAdapter<String>(this, R.layout.list_item);
 		this.consoleView = (ListView) this.findViewById(R.id.measurementScheduleConsole);
 		this.consoleView.setAdapter(adapter);
+		
+		
 
 
 		registerForContextMenu(consoleView);
@@ -105,12 +113,25 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 		 *  It is more flexable and scalable 
 		 */
 		//    // Register activity specific BroadcastReceiver here    
-		//    IntentFilter filter = new IntentFilter();
-		//    filter.addAction(MobiperfIntent.SCHEDULER_CONNECTED_ACTION);
-		//    filter.addAction(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION);
-		//    this.receiver = new BroadcastReceiver() {
-		//      @Override
-		//      public void onReceive(Context context, Intent intent) {
+		    IntentFilter filter = new IntentFilter();
+		    //TODO(Ashkan) change it to MobiperfIntent
+		    filter.addAction(UpdateIntent.USER_RESULT_ACTION);
+		    
+		    this.receiver = new BroadcastReceiver() {
+				      @Override
+				      public void onReceive(Context context, Intent intent) {
+				    	  if ( intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ) {
+				    		  //remove from the tasks
+				    		//updateConsole
+				    	  }
+//				    	else if(intent.getAction().equals(MobiperfIntent.MEASUREMENT_ADDED_ACTION)){
+//				    		  updateTasksFromConsole();
+//				    		  Logger.e("----------------------");
+//				    	  }
+				    	  
+				      }
+		    };
+		    this.registerReceiver(this.receiver, filter);
 		//        Logger.d("MeasurementConsole got intent");
 		//        /* The content of the console is maintained by the scheduler. We simply hook up the 
 		//         * view with the content here. */
@@ -133,8 +154,9 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 
 	@Override
 	protected void onResume() {
+		updateTasksFromConsole();
 		super.onResume();
-		//    updateConsole();
+		
 	}
 
 	@Override
@@ -183,6 +205,8 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 					 public void onClick(View v) {
 						 TaskItemAdapter.this.remove(taskitem);
 						 TaskItemAdapter.this.notifyDataSetChanged();
+						 console.removeUserTask(taskitem.getTaskId());
+						 //TODO cancel task
 					 }
 
 					public 	OnClickListener init(TaskItem ti) {
@@ -217,6 +241,26 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 		}
 		public TaskItem(){
 
+		}
+		public TaskItem(String taskId, String desc){
+			this.description=desc;
+			this.taskId=taskId;
+		}
+	}
+	
+	
+	private synchronized void updateTasksFromConsole(){
+		if (console != null) {
+			taskItems.clear();
+			final List<MeasurementTask> user_tasks=console.getUserTasks();
+			for(MeasurementTask task: user_tasks){
+				taskItems.add(new TaskItem(task.getTaskId(),task.toString()));
+			}
+			runOnUiThread(new Runnable() {
+		        public void run() { adapter.notifyDataSetChanged(); }
+		      });
+			
+			
 		}
 	}
 

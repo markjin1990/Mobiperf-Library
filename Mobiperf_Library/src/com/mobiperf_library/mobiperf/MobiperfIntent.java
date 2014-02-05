@@ -36,6 +36,10 @@ public class MobiperfIntent extends Intent {
       PACKAGE_PREFIX + ".MSG_ACTION";
   public static final String SCHEDULER_CONNECTED_ACTION =
       PACKAGE_PREFIX + ".SCHEDULER_CONNECTED_ACTION";
+  
+//  public static final String MEASUREMENT_ADDED_ACTION =
+//	      PACKAGE_PREFIX + ".MEASUREMENT_ADDED_ACTION";
+  
 ////  public static final String PREFERENCE_ACTION =
 ////      PACKAGE_PREFIX + ".PREFERENCE_ACTION";
 //  public static final String MEASUREMENT_ACTION =
