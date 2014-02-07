@@ -188,36 +188,43 @@ public class MeasurementCreationActivity extends Activity {
       MeasurementTask newTask = null;
       boolean showLengthWarning = false;
       Map<String, String> params = new HashMap<String, String>();
+      String taskTarget="";
       int measurementType = -1;
       try {
         if (measurementTypeUnderEdit.equals(API.PING_TYPE)) {
           EditText pingTargetText = (EditText) findViewById(R.id.pingTargetText);
           params.put("target", pingTargetText.getText().toString());
+          taskTarget=pingTargetText.getText().toString();
           measurementType = API.Ping;
         } else if (measurementTypeUnderEdit.equals(API.HTTP_TYPE)) {
           EditText httpUrlText = (EditText) findViewById(R.id.httpUrlText);
           params.put("url", httpUrlText.getText().toString());
           params.put("method", "get");
+          taskTarget=httpUrlText.getText().toString();
           measurementType = API.HTTP;
         } else if (measurementTypeUnderEdit.equals(API.TRACEROUTE_TYPE)) {
           EditText targetText = (EditText) findViewById(R.id.tracerouteTargetText);
           params.put("target", targetText.getText().toString());
           measurementType = API.Traceroute;
+          taskTarget=targetText.getText().toString();
           showLengthWarning = true;
         } else if (measurementTypeUnderEdit.equals(API.DNSLOOKUP_TYPE)) {
           EditText dnsTargetText = (EditText) findViewById(R.id.dnsLookupText);
           params.put("target", dnsTargetText.getText().toString());
+          taskTarget=dnsTargetText.getText().toString();
           measurementType = API.DNSLookup;
         } else if (measurementTypeUnderEdit.equals(API.UDPBURST_TYPE)) {
           // TODO(dominic): Support multiple servers for UDP. For now, just
           // m-lab.
           params.put("target", MLabNS.TARGET);
           params.put("direction", udpDir);
+          taskTarget=udpDir;
           measurementType = API.UDPBurst;
         } else if (measurementTypeUnderEdit.equals(API.TCPTHROUGHPUT_TYPE)) {
             params.put("target", MLabNS.TARGET);
             params.put("dir_up", tcpDir);
             measurementType = API.TCPThroughput;
+            taskTarget=tcpDir;
             showLengthWarning = true;
         }
         
@@ -240,13 +247,13 @@ public class MeasurementCreationActivity extends Activity {
           }
           Logger.e("MeasurementCreationActivity@button click: console is " + console);
           
-          // Hongyi: broadcast the measurement start
+          
           console = parent.getConsole();
           if ( console != null ) {
             console.updateStatus("User task " + newTask.getDescriptor()
               + " is submitted to scheduler");
-            console.addUserTask(newTask);
-            
+            console.addUserTask(newTask.getTaskId(), newTask.getMeasurementType()+','+taskTarget);
+            console.persistState();
           }
           
 

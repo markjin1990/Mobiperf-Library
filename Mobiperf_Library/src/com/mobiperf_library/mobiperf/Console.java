@@ -1,36 +1,20 @@
 package com.mobiperf_library.mobiperf;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.ConcurrentModificationException;
 import java.util.Date;
+
 import java.util.List;
-import java.util.Vector;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.PriorityBlockingQueue;
 
 import com.google.myjson.reflect.TypeToken;
 import com.mobiperf_library.MeasurementResult;
-import com.mobiperf_library.MeasurementTask;
 import com.mobiperf_library.R;
 import com.mobiperf_library.UpdateIntent;
 import com.mobiperf_library.util.Logger;
 import com.mobiperf_library.util.MeasurementJsonConvertor;
 
-import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -54,7 +38,6 @@ public final class Console extends Service{
   private boolean stopRequested = false;
   private boolean isSchedulerStarted = false;
   
-  private AlarmManager alarmManager;
   // Binder given to clients
   private final IBinder binder = new ConsoleBinder();
   
@@ -65,7 +48,8 @@ public final class Console extends Service{
   private ArrayList<String> userResults;
   private ArrayList<String> systemResults;
   private ArrayList<String> systemConsole;
-  private volatile ArrayList<MeasurementTask> userTasks;
+  private volatile ArrayList<String> userTasks;
+  private volatile ArrayList<String> userPausedTasks;
   /**
    * The Binder class that returns an instance of running scheduler 
    */
@@ -92,7 +76,7 @@ public final class Console extends Service{
     
     this.stopRequested = false;
     this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-    this.alarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+    
     
     restoreState();
     
@@ -123,9 +107,7 @@ public final class Console extends Service{
       }
     };
     this.registerReceiver(broadcastReceiver, filter);
-    // TODO(mdw): Make this a user-selectable option
     addIconToStatusBar();
-    //startMobiperfInForeground();
   }
   
   /**
@@ -327,6 +309,8 @@ public final class Console extends Service{
     saveConsoleContent(systemResults, MobiperfConfig.PREF_KEY_SYSTEM_RESULTS);
     saveConsoleContent(userResults, MobiperfConfig.PREF_KEY_USER_RESULTS);
     saveConsoleContent(systemConsole, MobiperfConfig.PREF_KEY_SYSTEM_CONSOLE);
+    saveConsoleContent(userTasks, MobiperfConfig.PREF_KEY_USER_TASKS);
+    saveConsoleContent(userPausedTasks, MobiperfConfig.PREF_KEY_USER_PAUSED_TASKS);
     saveStats();
   }
 
@@ -407,9 +391,16 @@ public final class Console extends Service{
     systemConsole = new ArrayList<String>();
     restoreConsole(systemConsole, MobiperfConfig.PREF_KEY_SYSTEM_CONSOLE);
     
-    userTasks=new ArrayList<MeasurementTask>();
-    //TODO OOOOOOO
+    userTasks=new ArrayList<String>();
+    restoreConsole(userTasks, MobiperfConfig.PREF_KEY_USER_TASKS);
+    
+    userPausedTasks=new ArrayList<String>();
+    restoreConsole(userPausedTasks, MobiperfConfig.PREF_KEY_USER_PAUSED_TASKS);
+    
+    
   }
+  
+  
 
   /**
    * Restores content for consoleContent with the key prefKey.
@@ -426,13 +417,17 @@ public final class Console extends Service{
             listType);
       if (items != null) {
         Logger.d("Read " + items.size() + " items from prefkey " + prefKey);
+
         for (String item : items) {
-          insertStringToConsole(consoleContent, item);
+        	insertStringToConsole(consoleContent, item);
         }
+
         Logger.d("Restored " + consoleContent.size() + " entries to console "+ prefKey);
       }
     }
   }
+  
+  
 
   /**
    * Adds a string to the corresponding console depending on whether the result is a user
@@ -466,6 +461,8 @@ public final class Console extends Service{
         }
         String taskId=intent.getStringExtra(UpdateIntent.TASKID_PAYLOAD);
         removeUserTask(taskId);
+        removeFromPausedTasks(taskId);
+        persistState();
         insertStringToConsole(resultList, results[i].toString());
       }
     }
@@ -473,10 +470,7 @@ public final class Console extends Service{
 //      if (priority == API.USER_PRIORITY) {
 //        insertStringToConsole(userResults, msg);
 //      } else if (priority != API.INVALID_PRIORITY) {
-        /**
-         * TODO(Hongyi): invalid priority not stands for server priority?
-         *  Strange design...
-         */
+        
 //        insertStringToConsole(systemResults, msg);
 //      }
 //    }
@@ -494,24 +488,49 @@ public final class Console extends Service{
     }
   }
   
+ 
   
-  public synchronized void addUserTask(MeasurementTask task){
-	  userTasks.add(task);
+  public synchronized void addUserTask(String taskId,String desc){
+	  userTasks.add(taskId+","+desc);
   }
   
   public synchronized void removeUserTask(String taskId){
-	  MeasurementTask mt=null;
-	  for(MeasurementTask m: userTasks){
-		  if(m.getTaskId().equals(taskId)){
-			  mt=m;
+	  for (String task: userTasks){
+		  String id=task.substring(0, task.indexOf(','));
+		  if(id.equals(taskId)){
+			  userTasks.remove(task);
+			  break;
 		  }
-	  }
-	  if(mt!=null){
-		  userTasks.remove(mt);
 	  }
   }
   
-  public synchronized  List<MeasurementTask> getUserTasks(){
+  public synchronized  List<String> getUserTasks(){
 	  return Collections.unmodifiableList(userTasks);
   }
+  
+  public synchronized  List<String> getUserPausedTasks(){
+	  return Collections.unmodifiableList(userPausedTasks);
+  }
+  public synchronized void addToPausedTasks(String taskId){
+	  userPausedTasks.add(taskId);
+  }
+  
+  public synchronized void removeFromPausedTasks(String taskId){
+	  for (String id: userPausedTasks){
+		  if(taskId.equals(id)){
+			  userPausedTasks.remove(id);
+			  break;
+		  }
+	  }
+  }
+  
+  public synchronized boolean isPaused(String taskId){
+	  for (String id: userPausedTasks){
+		  if(taskId.equals(id)){
+			  return true;
+		  }
+	  }
+	  return false;
+  }
+  
 }

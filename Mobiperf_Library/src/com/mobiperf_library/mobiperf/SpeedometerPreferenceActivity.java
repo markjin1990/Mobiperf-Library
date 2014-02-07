@@ -121,39 +121,6 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
       }
     });
     
-//    ListPreference dataLimitLp = (ListPreference)findPreference(MobiperfConfig.PREF_KEY_DATA_LIMIT);
-//    final CharSequence[] dataLimitItems=new CharSequence[6];
-//    dataLimitItems[0]="250 MB";
-//    dataLimitItems[1]="500 MB";
-//    dataLimitItems[2]="750 MB";
-//    dataLimitItems[3]="1 GB";
-//    dataLimitItems[4]="2 GB";
-//    dataLimitItems[5]="Unlimited";
-//    dataLimitLp.setEntries(dataLimitItems);
-//    dataLimitLp.setEntryValues(dataLimitItems);
-//   
-//    // Restore current settings.
-//    
-//    String selectedDataLimitAccount = prefs.getString(Config.PREF_KEY_SELECTED_DATA_LIMIT, null);
-//    if (selectedDataLimitAccount != null) {
-//    	dataLimitLp.setValue(selectedDataLimitAccount);
-//    }else{
-//    	dataLimitLp.setValue("Unlimited");
-//    }
-//    
-//    dataLimitLp.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-//      @Override
-//      public boolean onPreferenceChange(Preference preference, Object newValue) {
-//        final String limit = newValue.toString();
-//        Logger.i("new data limit is selected: " + limit);
-//        
-//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-//        SharedPreferences.Editor editor = prefs.edit();
-//        editor.putString(Config.PREF_KEY_SELECTED_DATA_LIMIT, limit);
-//        editor.commit();
-//        return true;
-//      }
-//    });
     
     
     intervalPref.setOnPreferenceChangeListener(prefChangeListener);

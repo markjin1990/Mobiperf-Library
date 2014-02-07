@@ -94,6 +94,8 @@ public interface MobiperfConfig {
  public static final String PREF_KEY_CONSENTED = "PREF_KEY_CONSENTED";
  public static final String PREF_KEY_ACCOUNT = "PREF_KEY_ACCOUNT";
  public static final String PREF_KEY_SELECTED_ACCOUNT = "PREF_KEY_SELECTED_ACCOUNT";
+ public static final String PREF_KEY_USER_TASKS = "PREF_KEY_USER_TASKS";
+ public static final String PREF_KEY_USER_PAUSED_TASKS = "PREF_KEY_USER_PAUSED_TASKS";
  
  /** Constants for the splash screen */
  public static final long SPLASH_SCREEN_DURATION_MSEC = 1500;

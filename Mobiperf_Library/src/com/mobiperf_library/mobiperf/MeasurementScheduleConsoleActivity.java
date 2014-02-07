@@ -41,16 +41,25 @@ import android.widget.ToggleButton;
 
 import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.mobiperf_library.MeasurementTask;
 import com.mobiperf_library.R;
 import com.mobiperf_library.UpdateIntent;
 import com.mobiperf_library.api.API;
 import com.mobiperf_library.exceptions.MeasurementError;
+import com.mobiperf_library.measurements.DnsLookupTask;
+import com.mobiperf_library.measurements.HttpTask;
+import com.mobiperf_library.measurements.PingTask;
+import com.mobiperf_library.measurements.TCPThroughputTask;
+import com.mobiperf_library.measurements.TracerouteTask;
+import com.mobiperf_library.measurements.UDPBurstTask;
 import com.mobiperf_library.util.Logger;
+import com.mobiperf_library.util.MLabNS;
 
 /**
  * Activity that shows the current measurement schedule of the scheduler
@@ -156,7 +165,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		//    unregisterReceiver(receiver);//TODO(Ashkan): I have commented this line. Check that later.
+		//    unregisterReceiver(receiver);
 	}
 
 	class TaskItemAdapter extends ArrayAdapter<TaskItem> {
@@ -176,30 +185,98 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 			if(item!=null){
 				String taskId=item.getTaskId();
 				ToggleButton pauseButton=(ToggleButton) (v.findViewById(R.id.pausebutton));
+				if(console.isPaused(taskId)){
+					pauseButton.setChecked(true);
+				}
+				else{
+					pauseButton.setChecked(false);
+				}
 				pauseButton.setOnClickListener(new View.OnClickListener() {
-					private String id;//taskId
+					private TaskItem taskitem;
 					 public void onClick(View v) {
 		            	 boolean paused = ((ToggleButton) v).isChecked();
-		            	    
 		            	    if (paused) {
-		            	        
-		            	    } else {
+		            	        //canceling the task
+		            	    	try {
+		            	    		MeasurementScheduleConsoleActivity.this.api.cancelTask(taskitem.getTaskId());
+		            	    		console.addToPausedTasks(taskitem.getTaskId());
+		            	    		console.persistState();
+		            	    	} catch (MeasurementError e) {
+									Logger.e(e.toString());
+						            Toast.makeText(MeasurementScheduleConsoleActivity.this, R.string.cancelUserMeasurementFailureToast,
+						              Toast.LENGTH_LONG).show();
+								}
+		            	    }else{
+		            	    	//creating another task
+		            	    	console.removeFromPausedTasks(taskitem.getTaskId());
+		            	    	console.persistState();
+		            	    	String taskDesc=taskitem.getDescription();
+		            	    	MeasurementTask newTask = null;
+		            	    	int measurementType = -1;
+		            	        Map<String, String> params = new HashMap<String, String>();
+		            	    	if(taskDesc.startsWith(TracerouteTask.TYPE)){
+		            	    		measurementType=API.Traceroute;
+		            	    		params.put("target", taskDesc.substring(taskDesc.indexOf(',')+1));
+		            			}else if(taskDesc.startsWith(PingTask.TYPE)){
+		            				measurementType=API.Ping;
+		            				params.put("target", taskDesc.substring(taskDesc.indexOf(',')+1));
+		            			}else if(taskDesc.startsWith(DnsLookupTask.TYPE)){
+		            				measurementType=API.DNSLookup;
+		            				params.put("target", taskDesc.substring(taskDesc.indexOf(',')+1));
+		            			}else if(taskDesc.startsWith(HttpTask.TYPE)){
+		            				measurementType=API.HTTP;
+		            				params.put("url", taskDesc.substring(taskDesc.indexOf(',')+1));
+		            				params.put("method", "get");
+		            			}else if(taskDesc.startsWith(UDPBurstTask.TYPE)){
+		            				measurementType=API.UDPBurst;
+		            				params.put("target", MLabNS.TARGET);
+		            		        params.put("direction", taskDesc.substring(taskDesc.indexOf(',')+1));
+		            			}else if(taskDesc.startsWith(TCPThroughputTask.TYPE)){
+		            				measurementType=API.TCPThroughput;
+		            				params.put("target", MLabNS.TARGET);
+		            	            params.put("dir_up", taskDesc.substring(taskDesc.indexOf(',')+1));
+		            			}
+		            	    	newTask = api.createTask(measurementType,
+		            	    	          Calendar.getInstance().getTime(),
+		            	    	          null,
+		            	    	          MobiperfConfig.DEFAULT_USER_MEASUREMENT_INTERVAL_SEC,
+		            	    	          MobiperfConfig.DEFAULT_USER_MEASUREMENT_COUNT,
+		            	    	          API.USER_PRIORITY,
+		            	    	          MobiperfConfig.DEFAULT_CONTEXT_INTERVAL,
+		            	    	          params);
 
+		            	    	if (newTask != null) {
+		            	    		try {
+		            	    			MeasurementScheduleConsoleActivity.this.api.addTask(newTask);
+		            	    		} catch (MeasurementError e) {
+		            	    			Logger.e(e.toString());
+		            	    			Toast.makeText(MeasurementScheduleConsoleActivity.this, R.string.userMeasurementFailureToast,
+		            	    					Toast.LENGTH_LONG).show();
+		            	    		}
+		            	    	}
+		            	    	console.removeUserTask(taskitem.getTaskId());
+		            	    	console.addUserTask(newTask.getTaskId(), taskDesc);
+		            	    	console.persistState();
+		            	    	
+		            	    	
+		            	    	
+		            	    	
 		            	    }
 		             }
 
-					public 	OnClickListener init(String taskId) {
-						id=taskId;
+					public 	OnClickListener init(TaskItem ti) {
+						taskitem=ti;
 						return this;
 					}
-		         }.init(taskId));
+		         }.init(item));
 				Button cancelButton=(Button)(v.findViewById(R.id.cancelbutton));
 				cancelButton.setOnClickListener(new View.OnClickListener() {
-					private TaskItem taskitem;//you can get task id from TaskItem
+					private TaskItem taskitem;
 					 public void onClick(View v) {
 						 try {
 							MeasurementScheduleConsoleActivity.this.api.cancelTask(taskitem.getTaskId());
 							console.removeUserTask(taskitem.getTaskId());
+							console.persistState();
 							TaskItemAdapter.this.remove(taskitem);
 							TaskItemAdapter.this.notifyDataSetChanged();
 							
@@ -216,8 +293,8 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 					}
 		         }.init(item));
 				TextView text= (TextView) (v.findViewById(R.id.taskdesc));
-				text.setText(item.getDescription());
-				//TODO assign text
+				text.setText(item.toString());
+				
 
 			}
 
@@ -247,15 +324,35 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 			this.description=desc;
 			this.taskId=taskId;
 		}
+		@Override
+		public String toString() {
+			String result="";
+			if(description.startsWith(TracerouteTask.TYPE)){
+				result+="["+TracerouteTask.TYPE+"]\ntarget: "+description.substring(description.indexOf(',')+1);
+			}else if(description.startsWith(PingTask.TYPE)){
+				result+="["+PingTask.TYPE+"]\ntarget: "+description.substring(description.indexOf(',')+1);
+			}else if(description.startsWith(DnsLookupTask.TYPE)){
+				result+="["+DnsLookupTask.TYPE+"]\ntarget: "+description.substring(description.indexOf(',')+1);
+			}else if(description.startsWith(HttpTask.TYPE)){
+				result+="["+HttpTask.TYPE+"]\ntarget: "+description.substring(description.indexOf(',')+1);
+			}else if(description.startsWith(UDPBurstTask.TYPE)){
+				result+="["+UDPBurstTask.TYPE+"]\ndirection: "+description.substring(description.indexOf(',')+1);
+			}else if(description.startsWith(TCPThroughputTask.TYPE)){
+				result+="["+TCPThroughputTask.TYPE+"]\ndirection: "+description.substring(description.indexOf(',')+1);
+			}
+			return result;
+		}
 	}
 	
 	
 	private synchronized void updateTasksFromConsole(){
 		if (console != null) {
 			taskItems.clear();
-			final List<MeasurementTask> user_tasks=console.getUserTasks();
-			for(MeasurementTask task: user_tasks){
-				taskItems.add(new TaskItem(task.getTaskId(),task.toString()));
+			final List<String> user_tasks=console.getUserTasks();
+			for(String taskStr: user_tasks){
+				String taskId=taskStr.substring(0, taskStr.indexOf(','));
+				String taskDesc=taskStr.substring(taskStr.indexOf(',')+1);
+				taskItems.add(new TaskItem(taskId,taskDesc));
 			}
 			runOnUiThread(new Runnable() {
 		        public void run() { adapter.notifyDataSetChanged(); }
