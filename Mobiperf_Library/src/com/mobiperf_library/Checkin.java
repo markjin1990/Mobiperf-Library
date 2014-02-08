@@ -137,7 +137,7 @@ public class Checkin {
       for (int i = 0; i < jsonArray.length(); i++) {
         Logger.d("Parsing index " + i);
         JSONObject json = jsonArray.optJSONObject(i);
-        Logger.d("Value is " + json);
+        Logger.i("Value is " + json);
         // checkin task must support 
         if (json != null && 
             MeasurementTask.getMeasurementTypes().contains(json.get("type"))) {

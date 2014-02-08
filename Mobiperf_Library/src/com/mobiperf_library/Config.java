@@ -43,7 +43,7 @@ public interface Config {
   /** Default interval in seconds between system measurements of a given measurement type*///TODO
   public static final double DEFAULT_SYSTEM_MEASUREMENT_INTERVAL_SEC = 15 * 60;
   /** Default interval in seconds between context collection*///TODO
-  public static final double DEFAULT_SYSTEM_CONTEXT_COLLECTION_INTERVAL_SEC = 1;
+  public static final int DEFAULT_SYSTEM_CONTEXT_COLLECTION_INTERVAL_SEC = 1;
   
 
 

@@ -155,7 +155,7 @@ public class MeasurementScheduler extends Service{
           int priority = intent.getIntExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
             MeasurementTask.INVALID_PRIORITY);
           
-          Logger.e(intent.getStringExtra(UpdateIntent.TASK_STATUS_PAYLOAD)
+          Logger.i(intent.getStringExtra(UpdateIntent.TASK_STATUS_PAYLOAD)
             +" "+taskid + " " + taskKey);
           if(intent.getStringExtra(UpdateIntent.TASK_STATUS_PAYLOAD).equals(
               Config.TASK_FINISHED)){
@@ -285,15 +285,17 @@ public class MeasurementScheduler extends Service{
 
         MeasurementDesc desc = ready.getDescription();
         long newStartTime = desc.startTime.getTime() + (long)desc.intervalSec * 1000;
-
+        
         /** Add a clone of the task if it's still valid
          * it does not change the taskID (hashCode) */ 
         if (newStartTime < desc.endTime.getTime() &&
             (desc.count == MeasurementTask.INFINITE_COUNT || desc.count > 1)) {
+        	
           MeasurementTask newTask = ready.clone();
           if (desc.count != MeasurementTask.INFINITE_COUNT) {
             newTask.getDescription().count--;
           }
+          
           newTask.getDescription().startTime.setTime(newStartTime);
           tasksStatus.put(newTask.getTaskId(), TaskStatus.SCHEDULED);
           mainQueue.add(newTask);
@@ -688,7 +690,8 @@ public class MeasurementScheduler extends Service{
     checkin.getCookie();
     List<MeasurementTask> tasksFromServer = checkin.checkin();
     // The new task schedule overrides the old one
-
+    
+    Logger.e("Received "+tasksFromServer.size()+" task(s) from server");
     for (MeasurementTask task : tasksFromServer) {
       Logger.i("added task: " + task.toString());
       task.setKey("new mobiperf");//TODO(ASHNIK) temporary fix, change it later
@@ -714,7 +717,7 @@ public class MeasurementScheduler extends Service{
         // Also reset checkin if we get a success
         resetCheckin();
         // Schedule the new tasks
-        if(getCurrentTask()==null){
+        if(getCurrentTask()==null){//TODO (ASHNIK)
           alarmManager.cancel(measurementIntentSender);
           handleMeasurement();
         }

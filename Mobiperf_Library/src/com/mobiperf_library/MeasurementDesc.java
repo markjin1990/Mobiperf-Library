@@ -8,6 +8,7 @@ import com.mobiperf_library.measurements.DnsLookupTask;
 import com.mobiperf_library.measurements.HttpTask;
 import com.mobiperf_library.measurements.PingTask;
 import com.mobiperf_library.measurements.TracerouteTask;
+import com.mobiperf_library.util.Logger;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -51,8 +52,8 @@ public abstract class MeasurementDesc implements Parcelable{
    * @param params Measurement parameters Measurement parameters.
    */
   protected MeasurementDesc(String type, String key, Date startTime, 
-    Date endTime, double intervalSec, long count, long priority,
-    int contextIntervalSec, Map<String, String> params ) {
+      Date endTime, double intervalSec, long count, long priority,
+      int contextIntervalSec, Map<String, String> params ) {
     super();
     this.type = type;
     this.key = key;
@@ -73,6 +74,7 @@ public abstract class MeasurementDesc implements Parcelable{
     } else {
       this.endTime = endTime;
     }
+    
     if (intervalSec <= 0) {
       this.intervalSec = Config.DEFAULT_SYSTEM_MEASUREMENT_INTERVAL_SEC;
     } else {
@@ -81,11 +83,11 @@ public abstract class MeasurementDesc implements Parcelable{
     this.count = count;
     this.priority = priority;
     this.parameters = params;
-    
+
     if (contextIntervalSec<=0){
-    	this.intervalSec = Config.DEFAULT_SYSTEM_CONTEXT_COLLECTION_INTERVAL_SEC;
+      this.contextIntervalSec = Config.DEFAULT_SYSTEM_CONTEXT_COLLECTION_INTERVAL_SEC;
     }else{
-    	this.contextIntervalSec=contextIntervalSec;
+      this.contextIntervalSec=contextIntervalSec;
     }
   }
 
@@ -99,7 +101,6 @@ public abstract class MeasurementDesc implements Parcelable{
   public boolean equals(Object o) {
 
     MeasurementDesc another= (MeasurementDesc) o;
-    //    Logger.e((this.parameters==null)+"----"+(another.parameters==null));
     if(this.type.equals(another.type) &&
         this.key.equals(another.key) &&
         this.startTime.equals(another.startTime) &&
@@ -110,6 +111,19 @@ public abstract class MeasurementDesc implements Parcelable{
         this.contextIntervalSec==another.contextIntervalSec&&
         this.parameters.equals(another.parameters)){
 
+      return true;
+    }
+    return false;
+
+  }
+
+  public boolean isSameTaskAs(MeasurementDesc another){
+    if(this.type.equals(another.type) &&
+        this.intervalSec==another.intervalSec &&
+        this.count==another.count &&
+        this.priority==another.priority&&
+        this.contextIntervalSec==another.contextIntervalSec&&
+        this.parameters.equals(another.parameters)){
       return true;
     }
     return false;
