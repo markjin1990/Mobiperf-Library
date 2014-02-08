@@ -1,5 +1,6 @@
 package com.mobiperf_library;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
@@ -117,18 +118,17 @@ public abstract class MeasurementDesc implements Parcelable{
 
   }
 
-  public boolean isSameTaskAs(MeasurementDesc another){
-    if(this.type.equals(another.type) &&
-        this.intervalSec==another.intervalSec &&
-        this.count==another.count &&
-        this.priority==another.priority&&
-        this.contextIntervalSec==another.contextIntervalSec&&
-        this.parameters.equals(another.parameters)){
-      return true;
+  @Override
+  public String toString() {
+    String result=type+","+key+","+intervalSec+","+count+","+priority+","+contextIntervalSec+",";
+    Object [] keys=parameters.keySet().toArray();
+    Arrays.sort(keys);
+    for(Object k : keys){
+      result+=parameters.get(k)+",";
     }
-    return false;
-
+    return result;
   }
+
 
   protected MeasurementDesc(Parcel in) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();

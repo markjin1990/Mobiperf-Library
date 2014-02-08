@@ -92,6 +92,8 @@ public class MeasurementScheduler extends Service{
   private volatile MeasurementTask currentTask;
 
   private volatile ConcurrentHashMap<String, String> idToClientKey;
+  
+  private volatile HashMap <String, Date> serverTasks;
 
   private HashMap<String, Messenger> mClients;
   private Messenger messenger;
@@ -116,6 +118,8 @@ public class MeasurementScheduler extends Service{
     this.alarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
 
     this.idToClientKey= new ConcurrentHashMap<String, String>();
+    
+    this.serverTasks= new HashMap<String, Date>();
 
     this.mClients = new HashMap<String, Messenger>();
     messenger = new Messenger(new APIRequestHandler(this));
@@ -286,9 +290,15 @@ public class MeasurementScheduler extends Service{
         MeasurementDesc desc = ready.getDescription();
         long newStartTime = desc.startTime.getTime() + (long)desc.intervalSec * 1000;
         
+        if(desc.count==MeasurementTask.INFINITE_COUNT && desc.priority==MeasurementTask.INVALID_PRIORITY){
+          if(serverTasks.containsKey(desc.toString()) && serverTasks.get(desc.toString()).after(desc.endTime)){
+            ready.getDescription().endTime.setTime(serverTasks.get(desc.toString()).getTime());
+          }
+        }
+        
         /** Add a clone of the task if it's still valid
          * it does not change the taskID (hashCode) */ 
-        if (newStartTime < desc.endTime.getTime() &&
+        if (newStartTime < ready.getDescription().endTime.getTime() &&
             (desc.count == MeasurementTask.INFINITE_COUNT || desc.count > 1)) {
         	
           MeasurementTask newTask = ready.clone();
@@ -311,6 +321,13 @@ public class MeasurementScheduler extends Service{
           intent.putExtra(UpdateIntent.TASKID_PAYLOAD, ready.getTaskId());
           intent.putExtra(UpdateIntent.TASKKEY_PAYLOAD, ready.getKey());
           MeasurementScheduler.this.sendBroadcast(intent);
+          
+          if(desc.count==MeasurementTask.INFINITE_COUNT && 
+              desc.priority==MeasurementTask.INVALID_PRIORITY){
+            serverTasks.remove(desc.toString());
+          }
+          
+          
           handleMeasurement();
         }else{
           Logger.e(ready.getDescription().key+" is gonna run");
@@ -693,9 +710,18 @@ public class MeasurementScheduler extends Service{
     
     Logger.e("Received "+tasksFromServer.size()+" task(s) from server");
     for (MeasurementTask task : tasksFromServer) {
-      Logger.i("added task: " + task.toString());
       task.setKey("new mobiperf");//TODO(ASHNIK) temporary fix, change it later
-      this.mainQueue.add(task);
+      if(task.getDescription().count==MeasurementTask.INFINITE_COUNT){
+        if(!serverTasks.containsKey(task.getDescription().toString())){
+          this.mainQueue.add(task);
+        }
+        serverTasks.put(task.getDescription().toString(), task.getDescription().endTime); 
+      }else{
+        this.mainQueue.add(task);
+      }
+      
+      
+      
     }
   }
 
