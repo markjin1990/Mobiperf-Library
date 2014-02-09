@@ -95,6 +95,9 @@ public class ServerMeasurementTask implements Callable<MeasurementResult []> {
         results = realTask.call(); 
         ArrayList<HashMap<String, String>> contextResults = 
             contextCollector.stopCollector();
+        for (MeasurementResult r: results){
+          r.addContextResults(contextResults);
+        }
         broadcastMeasurementEnd(results, null);
       } catch (MeasurementError e) {
         String error = "Server measurement " + realTask.getDescriptor() 
