@@ -31,13 +31,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import org.json.JSONException;
 
 import com.mobiperf_library.Config;
 import com.mobiperf_library.MeasurementTask;
 import com.mobiperf_library.UpdateIntent;
 import com.mobiperf_library.util.Logger;
-import com.mobiperf_library.util.MeasurementJsonConvertor;
 import com.mobiperf_library.util.PhoneUtils;
 import com.mobiperf_library.exceptions.MeasurementSkippedException;
 
@@ -404,6 +402,8 @@ public class MeasurementScheduler extends Service{
         if(current instanceof PreemptibleMeasurementTask &&
             ((PreemptibleMeasurementTask)current).pause()){
           pendingTasks.remove(current);
+          ((PreemptibleMeasurementTask)current).updateTotalRunningTime(
+              System.currentTimeMillis()- getCurrentTaskStartTime().getTime());
           if(newTask.timeFromExecution() <= 0){            
             mainQueue.add(newTask);
             mainQueue.add(current);
