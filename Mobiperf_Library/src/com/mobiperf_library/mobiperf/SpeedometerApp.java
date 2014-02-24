@@ -17,9 +17,9 @@ package com.mobiperf_library.mobiperf;
 
 import java.security.Security;
 
-import com.mobiperf_library.AccountSelector;
+import com.mobilyzer.AccountSelector;
 import com.mobiperf_library.R;
-import com.mobiperf_library.api.API;
+import com.mobilyzer.api.API;
 import com.mobiperf_library.mobiperf.Console.ConsoleBinder;
 import com.mobiperf_library.util.Logger;
 
@@ -256,7 +256,7 @@ public class SpeedometerApp extends TabActivity {
    statusBar = (TextView) findViewById(R.id.systemStatusBar);
    statsBar = (TextView) findViewById(R.id.systemStatsBar);
 
-   api = API.getAPI(this, "new mobiperf");
+   api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
    // We only need one instance of the Console thread
    intent = new Intent(this, Console.class);
    this.startService(intent);
@@ -397,31 +397,35 @@ public class SpeedometerApp extends TabActivity {
    super.onStart();
  }
  
- @Override
- protected void onStop() {
-   Logger.d("onStop called");
-   Logger.e("SpeedometerApp-> onStop called");
-   super.onStop();
-   api.unbind();
-   if (isBound) {
-     unbindService(serviceConn);
-     isBound = false;
-   }
- }
+// @Override
+// protected void onStop() {
+//   Logger.d("onStop called");
+//   Logger.e("SpeedometerApp-> onStop called");
+//   super.onStop();
+//   api.unbind();
+//   if (isBound) {
+//     unbindService(serviceConn);
+//     isBound = false;
+//   }
+// }
  
- @Override
- protected void onResume() {
-   Logger.d("Hongyi: onResume called");
-   Logger.e("SpeedometerApp-> onResume called");
-   bindToService();
-   api.bind();
-   super.onResume();
- }
+// @Override
+// protected void onResume() {
+//   Logger.d("Hongyi: onResume called");
+//   Logger.e("SpeedometerApp-> onResume called");
+//   bindToService();
+//   api.bind();
+//   super.onResume();
+// }
  @Override
  protected void onDestroy() {
    Logger.d("onDestroy called");
    Logger.e("SpeedometerApp-> onDestroy called");
    super.onDestroy();
+   if ( isBound ) {
+     unbindService(serviceConn);
+     isBound = false;
+   }
    this.unregisterReceiver(this.receiver);
  }
 

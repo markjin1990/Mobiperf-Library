@@ -20,21 +20,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Parcelable;
-import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.ToggleButton;
 
 import java.util.List;
 
-import com.mobiperf_library.MeasurementResult;
 import com.mobiperf_library.R;
-import com.mobiperf_library.UpdateIntent;
-import com.mobiperf_library.api.API;
+import com.mobilyzer.api.API;
 import com.mobiperf_library.util.Logger;
 
 /**
@@ -52,6 +47,7 @@ public class ResultsConsoleActivity extends Activity {
   private Console console;
   boolean userResultsActive = false;
   
+  private API api;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     Logger.d("ResultsConsoleActivity.onCreate called");
@@ -78,27 +74,28 @@ public class ResultsConsoleActivity extends Activity {
     };
     showUserResultButton.setOnCheckedChangeListener(buttonClickListener);
     showSystemResultButton.setOnCheckedChangeListener(buttonClickListener);
-
+    
+    // Hongyi: get API singleton object
+    this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
 
     // Hongyi: get console singleton
     this.console = ((SpeedometerApp)this.getParent()).getConsole();
-    //TODO(Ashkan->Hongyi) change it to MobiperfIntent
+    
     IntentFilter filter = new IntentFilter();
     filter.addAction(MobiperfIntent.SCHEDULER_CONNECTED_ACTION);
-//    filter.addAction(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION);
-    filter.addAction(UpdateIntent.USER_RESULT_ACTION);
-    filter.addAction(UpdateIntent.SERVER_RESULT_ACTION);
+    filter.addAction(api.userResultAction);
+    filter.addAction(API.SERVER_RESULT_ACTION);
     this.receiver = new BroadcastReceiver() {
       @Override
       // All onXyz() callbacks are single threaded
       public void onReceive(Context context, Intent intent) {
-        if ( intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ) {
+        if ( intent.getAction().equals(api.userResultAction) ) {
           Logger.d("receive user results");
           switchBetweenResults(true);
           console.updateStatus(null);
           console.persistState();
         }
-        else if ( intent.getAction().equals(UpdateIntent.SERVER_RESULT_ACTION) ) {
+        else if ( intent.getAction().equals(API.SERVER_RESULT_ACTION) ) {
           getConsoleContentFromScheduler();
           console.updateStatus(null);
           console.persistState();
@@ -126,21 +123,6 @@ public class ResultsConsoleActivity extends Activity {
              (showUserResults ? "user" : "system") + " results");
   }
   
-  /**
-   *  Upgrades the progress bar in the UI.
-   *  */
-//  private void upgradeProgress(int progress, int max) {
-//    Logger.d("Progress is " + progress);
-//    if (progress >= 0 && progress <= max) {
-//      progressBar.setProgress(progress);
-//      this.progressBar.setVisibility(View.VISIBLE);
-//    } else {
-//      // UserMeasurementTask broadcast a progress greater than max to indicate the termination of
-//      // the measurement.
-//      this.progressBar.setVisibility(View.INVISIBLE);
-//    }
-//  }
-  
   @Override
   protected void onDestroy() {
     Logger.d("ResultsConsoleActivity.onDestroy called");
@@ -148,9 +130,6 @@ public class ResultsConsoleActivity extends Activity {
     this.unregisterReceiver(this.receiver);
   }
 
-  /**
-   * TODO(Hongyi): we don't need scheduler here
-   */
   private synchronized void getConsoleContentFromScheduler() {
     Logger.d("ResultsConsoleActivity.getConsoleContentFromScheduler called");
     // Scheduler may have not had time to start yet. When it does, the intent above will call this

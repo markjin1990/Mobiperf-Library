@@ -17,8 +17,6 @@ package com.mobiperf_library.mobiperf;
 
 
 import com.mobiperf_library.R;
-import com.mobiperf_library.util.Logger;
-
 import android.app.Activity;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;

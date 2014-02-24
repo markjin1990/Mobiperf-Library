@@ -15,7 +15,8 @@
 
 package com.mobiperf_library.mobiperf;
 
-import com.mobiperf_library.AccountSelector;
+import com.mobilyzer.AccountSelector;
+import com.mobilyzer.api.API;
 import com.mobiperf_library.R;
 import com.mobiperf_library.util.Logger;
 
@@ -32,11 +33,14 @@ import android.widget.Toast;
  * Activity that handles user preferences
  */
 public class SpeedometerPreferenceActivity extends PreferenceActivity {
-  
+  private API api;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     addPreferencesFromResource(R.xml.preference);
+    
+    // Hongyi: get API singleton object
+    this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
     
     Preference intervalPref = findPreference(getString(R.string.checkinIntervalPrefKey));
     Preference batteryPref = findPreference(getString(R.string.batteryMinThresPrefKey));

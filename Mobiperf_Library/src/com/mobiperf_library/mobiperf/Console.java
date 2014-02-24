@@ -9,11 +9,12 @@ import java.util.Date;
 import java.util.List;
 
 import com.google.myjson.reflect.TypeToken;
-import com.mobiperf_library.MeasurementResult;
+import com.mobilyzer.MeasurementResult;
 import com.mobiperf_library.R;
-import com.mobiperf_library.UpdateIntent;
+import com.mobilyzer.UpdateIntent;
 import com.mobiperf_library.util.Logger;
-import com.mobiperf_library.util.MeasurementJsonConvertor;
+import com.mobilyzer.util.MeasurementJsonConvertor;
+import com.mobilyzer.api.API;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -50,6 +51,8 @@ public final class Console extends Service{
   private ArrayList<String> systemConsole;
   private volatile ArrayList<String> userTasks;
   private volatile ArrayList<String> userPausedTasks;
+  
+  private API api;
   /**
    * The Binder class that returns an instance of running scheduler 
    */
@@ -77,6 +80,8 @@ public final class Console extends Service{
     this.stopRequested = false;
     this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
     
+    // Hongyi: get singleton API object
+    this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
     
     restoreState();
     
@@ -84,19 +89,16 @@ public final class Console extends Service{
     IntentFilter filter = new IntentFilter();
     filter.addAction(MobiperfIntent.PREFERENCE_ACTION);
     filter.addAction(MobiperfIntent.MSG_ACTION);
-    filter.addAction(UpdateIntent.USER_RESULT_ACTION);
-    filter.addAction(UpdateIntent.SERVER_RESULT_ACTION);
-    
-    
-    
+    filter.addAction(api.userResultAction);
+    filter.addAction(API.SERVER_RESULT_ACTION);    
     broadcastReceiver = new BroadcastReceiver() {
       // Handles various broadcast intents.
       @Override
       public void onReceive(Context context, Intent intent) {
         if (intent.getAction().equals(MobiperfIntent.PREFERENCE_ACTION)) {
           updateFromPreference();
-        } else if (intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION) ||
-            intent.getAction().equals(UpdateIntent.SERVER_RESULT_ACTION)) {
+        } else if (intent.getAction().equals(api.userResultAction) ||
+            intent.getAction().equals(API.SERVER_RESULT_ACTION)) {
           Logger.d("MeasurementIntent update intent received");
           updateResultsConsole(intent);
         } else if (intent.getAction().equals(MobiperfIntent.MSG_ACTION)) {
@@ -435,12 +437,12 @@ public final class Console extends Service{
    */
   public void updateResultsConsole(Intent intent) {//TODO, when a measurement is finished, this func should be called
     ArrayList<String> resultList = null;
-    if ( intent.getAction().equals(UpdateIntent.USER_RESULT_ACTION)) {
+    if ( intent.getAction().equals(api.userResultAction)) {
       Logger.d("Get user result");
       resultList = userResults;
       Logger.e("Console-> user result is received.");
     }
-    else if ( intent.getAction().equals(UpdateIntent.SERVER_RESULT_ACTION)) {
+    else if ( intent.getAction().equals(API.SERVER_RESULT_ACTION)) {
       Logger.d("Get server result");
       Logger.e("Console-> server result is received.");
       resultList = systemResults;

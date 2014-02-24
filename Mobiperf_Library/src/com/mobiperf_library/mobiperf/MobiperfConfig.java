@@ -18,13 +18,11 @@
 //TODO: remove duplicate/unnecessary static variables
 package com.mobiperf_library.mobiperf;
 
-import com.mobiperf_library.UpdateIntent;
-
 /**
 * The system defaults.
 */
 public interface MobiperfConfig {
-	
+  public static final String CLIENT_KEY = "New Mobiperf";
   // Hongyi: add default context interval
   public static final int DEFAULT_CONTEXT_INTERVAL = 1;
 	
