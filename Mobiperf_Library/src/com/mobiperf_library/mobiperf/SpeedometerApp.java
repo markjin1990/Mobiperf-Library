@@ -17,9 +17,7 @@ package com.mobiperf_library.mobiperf;
 
 import java.security.Security;
 
-import com.mobilyzer.AccountSelector;
 import com.mobiperf_library.R;
-import com.mobilyzer.api.API;
 import com.mobiperf_library.mobiperf.Console.ConsoleBinder;
 import com.mobiperf_library.util.Logger;
 
@@ -49,6 +47,8 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mobilyzer.AccountSelector;
+import com.mobilyzer.api.API;
 /**
 * The main UI thread that manages different tabs
 */
@@ -76,21 +76,14 @@ public class SpeedometerApp extends TabActivity {
  private ServiceConnection serviceConn = new ServiceConnection() {
    @Override
    public void onServiceConnected(ComponentName className, IBinder service) {
-     Logger.d("onServiceConnected called");
      Logger.e("SpeedometerApp-> onServiceConnected called");
      // We've bound to LocalService, cast the IBinder and get LocalService
      // instance
      ConsoleBinder binder = (ConsoleBinder) service;
      console = binder.getService();
-     Logger.d("console is " + console);
      isBound = true;
      isBindingToService = false;
-     /**
-      * Hongyi: the display may not be correct because we have no idea what 
-      * task is running now
-      */
-     updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
-//     initializeStatusBar();
+     
      SpeedometerApp.this.sendBroadcast(new MobiperfIntent("",
        MobiperfIntent.SCHEDULER_CONNECTED_ACTION));
    }
@@ -211,7 +204,7 @@ public class SpeedometerApp extends TabActivity {
    Logger.e("SpeedometerApp-> onCreate()");
    super.onCreate(savedInstanceState);
    setContentView(R.layout.main);
-   
+
    restoreDefaultAccount();
    if (selectedAccount == null) {
      showDialog(DIALOG_ACCOUNT_SELECTOR);
@@ -256,11 +249,6 @@ public class SpeedometerApp extends TabActivity {
    statusBar = (TextView) findViewById(R.id.systemStatusBar);
    statsBar = (TextView) findViewById(R.id.systemStatsBar);
 
-   api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
-   // We only need one instance of the Console thread
-   intent = new Intent(this, Console.class);
-   this.startService(intent);
-
    IntentFilter filter = new IntentFilter();
    filter.addAction(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION);
    this.receiver = new BroadcastReceiver() {
@@ -286,6 +274,15 @@ public class SpeedometerApp extends TabActivity {
      }
    };
    this.registerReceiver(this.receiver, filter);
+   
+
+   api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
+//   // We only need one instance of the Console thread
+//   intent = new Intent(this, Console.class);
+//   this.startService(intent);
+   // Bind to the scheduler service for only once during the lifetime of the activity
+   this.bindToService();
+   
  }
  
  protected Dialog onCreateDialog(int id) {
@@ -390,10 +387,7 @@ public class SpeedometerApp extends TabActivity {
  
  @Override
  protected void onStart() {
-   Logger.d("onStart called");
    Logger.e("SpeedometerApp-> onStart called");
-   // Bind to the scheduler service for only once during the lifetime of the activity
-   bindToService();
    super.onStart();
  }
  
@@ -419,9 +413,9 @@ public class SpeedometerApp extends TabActivity {
 // }
  @Override
  protected void onDestroy() {
-   Logger.d("onDestroy called");
    Logger.e("SpeedometerApp-> onDestroy called");
    super.onDestroy();
+   api.unbind();
    if ( isBound ) {
      unbindService(serviceConn);
      isBound = false;
@@ -431,7 +425,6 @@ public class SpeedometerApp extends TabActivity {
 
  private void quitApp() {
    Logger.e("SpeedometerApp-> quitApp called");
-   Logger.d("quitApp called");
    api.unbind();
    if (isBound) {
      unbindService(serviceConn);

@@ -16,12 +16,20 @@
 package com.mobiperf_library.mobiperf;
 
 import com.mobilyzer.AccountSelector;
+import com.mobilyzer.MeasurementScheduler.DataUsageProfile;
+import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.api.API;
+import com.mobilyzer.exceptions.MeasurementError;
 import com.mobiperf_library.R;
 import com.mobiperf_library.util.Logger;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
@@ -34,30 +42,100 @@ import android.widget.Toast;
  */
 public class SpeedometerPreferenceActivity extends PreferenceActivity {
   private API api;
+  private BroadcastReceiver receiver;
+  private EditTextPreference intervalPref;
+  private EditTextPreference batteryPref;
+  private ListPreference accountPref;
+  private ListPreference dataLimitPref;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     addPreferencesFromResource(R.xml.preference);
-    
+
     // Hongyi: get API singleton object
     this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
-    
-    Preference intervalPref = findPreference(getString(R.string.checkinIntervalPrefKey));
-    Preference batteryPref = findPreference(getString(R.string.batteryMinThresPrefKey));
-    
-    
+
+    this.intervalPref = (EditTextPreference)findPreference(getString(R.string.checkinIntervalPrefKey));
+    this.batteryPref = (EditTextPreference)findPreference(getString(R.string.batteryMinThresPrefKey));
+    this.accountPref = (ListPreference)findPreference(getString(R.string.accountPrefKey));
+    this.dataLimitPref = (ListPreference)findPreference(getString(R.string.dataLimitPrefKey));
     /* This should never occur. */
-    if (intervalPref == null || batteryPref == null) {
+    if (intervalPref == null || batteryPref == null || accountPref == null
+        || dataLimitPref == null) {
       Logger.w("Cannot find some of the preferences");
       Toast.makeText(SpeedometerPreferenceActivity.this, 
         getString(R.string.menuInitializationExceptionToast), Toast.LENGTH_LONG).show();
       return;
     }
+    
+    // Setting data limit
+    final String[] dataLimitName = 
+      { "PROFILE 1", "PROFILE 2", "PROFILE 3", "PROFILE 4", "UNLIMITED" };
+    final String[] dataLimitProfile = 
+      { "PROFILE1", "PROFILE2", "PROFILE3", "PROFILE4", "UNLIMITED" };
+    dataLimitPref.setEntries(dataLimitName);
+    dataLimitPref.setEntryValues(dataLimitProfile);
 
+    
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(api.batteryThresholdAction);
+    filter.addAction(api.checkinIntervalAction);
+    filter.addAction(api.dataUsageAction);
+    this.receiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        if ( action.equals(api.batteryThresholdAction) ) {
+          int threshold = intent.getIntExtra(UpdateIntent.BATTERY_THRESHOLD_PAYLOAD, -1);
+          if ( threshold != -1 ) {
+            Logger.i("Current battery threshold " + threshold);
+            batteryPref.setText(String.valueOf(threshold));
+          }
+          else {
+            Logger.e("No battery threshold found");
+          }
+        }
+        else if (action.equals(api.checkinIntervalAction)) {
+          long interval = intent.getLongExtra(UpdateIntent.CHECKIN_INTERVAL_PAYLOAD, -1);
+          if ( interval != -1 ) {
+            Logger.i("Current checkin interval " + interval);
+            intervalPref.setText(String.valueOf(interval / 3600));
+          }
+          else {
+            Logger.e("No checkin interval found");
+          }
+        }
+        else if (action.equals(api.dataUsageAction)) {
+          DataUsageProfile profile = (DataUsageProfile)
+              intent.getSerializableExtra(UpdateIntent.DATA_USAGE_PAYLOAD);
+          if ( profile != null ) {
+            Logger.i("Current data usage profile " + profile);
+            dataLimitPref.setValue(profile.toString());
+          }
+          else {
+            Logger.e("No data usage profile found");
+          }
+        }
+        else {
+          Logger.e("Preference: received unknown action " + action);
+        }
+      }
+    };
+    this.registerReceiver(receiver, filter);
+    
+    // Hongyi: Update parameter values in SharedPreference 
+    try {
+      api.getBatteryThreshold();
+      api.getCheckinInterval();
+      api.getDataUsage();
+    } catch (MeasurementError e) {
+      Logger.e("Error initialize scheduler properties: " + e.getMessage());
+    }
+    
     /**
-     * TODO(Hongyi): shall we allow users to change check-in interval and 
-     * min battery threshold?
+     * Setting checkin interval, battery threshold
      */
+
     OnPreferenceChangeListener prefChangeListener = new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -70,12 +148,22 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
                   getString(R.string.invalidCheckinIntervalToast), Toast.LENGTH_LONG).show();
               return false;
             }
-            return true;
+            else {
+              // checkin interval's granularity is second level
+              api.setCheckinInterval(val * 3600);  
+              // Update data usage profile in SharedPreference 
+              api.getCheckinInterval();
+              return true;
+              
+            }
           } catch (ClassCastException e) {
             Logger.e("Cannot cast checkin interval preference value to Integer");
             return false;
           } catch (NumberFormatException e) {
             Logger.e("Cannot cast checkin interval preference value to Integer");
+            return false;
+          } catch (MeasurementError e) {
+            Logger.e("Error in setting checkin interval: " + e.getMessage());
             return false;
           }
         } else if (prefKey.compareTo(getString(R.string.batteryMinThresPrefKey)) == 0) {
@@ -86,32 +174,44 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
                   getString(R.string.invalidBatteryToast), Toast.LENGTH_LONG).show();
               return false;
             }
-            return true;
+            else {
+              api.setBatteryThreshold(val);
+              // Update data usage profile in SharedPreference
+              api.getBatteryThreshold();
+              return true;
+            }
           } catch (ClassCastException e) {
             Logger.e("Cannot cast battery preference value to Integer");
             return false;
           } catch (NumberFormatException e) {
             Logger.e("Cannot cast battery preference value to Integer");
             return false;
+          } catch (MeasurementError e) {
+            Logger.e("Error in setting battery threshold: " + e.getMessage());
+            return false;
           }
         }
         return true;
       }
     };
+    intervalPref.setOnPreferenceChangeListener(prefChangeListener);
+    batteryPref.setOnPreferenceChangeListener(prefChangeListener);
     
-    ListPreference lp = (ListPreference)findPreference(MobiperfConfig.PREF_KEY_ACCOUNT);
+    /**
+     * Setting authentication account 
+     */
     final CharSequence[] items = AccountSelector.getAccountList(getApplicationContext());
-    lp.setEntries(items);
-    lp.setEntryValues(items);
+    accountPref.setEntries(items);
+    accountPref.setEntryValues(items);
    
     // Restore current settings.
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
     String selectedAccount = prefs.getString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, null);
     if (selectedAccount != null) {
-      lp.setValue(selectedAccount);
+      accountPref.setValue(selectedAccount);
     }
     
-    lp.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+    accountPref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
         final String account = newValue.toString();
@@ -125,10 +225,22 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
       }
     });
     
-    
-    
-    intervalPref.setOnPreferenceChangeListener(prefChangeListener);
-    batteryPref.setOnPreferenceChangeListener(prefChangeListener);
+    dataLimitPref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+      @Override
+      public boolean onPreferenceChange(Preference preference, Object newValue) {
+        final String dataLimit = newValue.toString();
+        Logger.i("data limit is: " + dataLimit);
+        try {
+          api.setDataUsage(DataUsageProfile.valueOf(dataLimit));
+          // Update data usage profile in SharedPreference
+          api.getDataUsage();
+        } catch (MeasurementError e) {
+          Logger.e("Error setting data limit: " + e.getMessage());
+          return false;
+        }
+        return true;
+      }
+    });
   }
   
   /** 
@@ -137,8 +249,6 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    // The scheduler has a receiver monitoring this intent to get the update.
-    // TODO(Wenjie): Only broadcast update intent when there is real change in the settings.
-    this.sendBroadcast(new MobiperfIntent("", MobiperfIntent.PREFERENCE_ACTION));
+    this.unregisterReceiver(receiver);
   }
 }

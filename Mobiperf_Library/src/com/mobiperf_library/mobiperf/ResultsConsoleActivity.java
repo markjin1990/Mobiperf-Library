@@ -107,6 +107,8 @@ public class ResultsConsoleActivity extends Activity {
       }
     };
     this.registerReceiver(this.receiver, filter);
+
+    getConsoleContentFromScheduler();
   }
   
   /**

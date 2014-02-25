@@ -36,8 +36,6 @@ public final class Console extends Service{
   private static final int NOTIFICATION_ID = 1234;
   
   private BroadcastReceiver broadcastReceiver;
-  private boolean stopRequested = false;
-  private boolean isSchedulerStarted = false;
   
   // Binder given to clients
   private final IBinder binder = new ConsoleBinder();
@@ -52,42 +50,24 @@ public final class Console extends Service{
   private volatile ArrayList<String> userTasks;
   private volatile ArrayList<String> userPausedTasks;
   
-  private API api;
-  /**
-   * The Binder class that returns an instance of running scheduler 
-   */
-  public class ConsoleBinder extends Binder {
-    public Console getService() {
-      return Console.this;
-    }
-  }
-
-  /* Returns a IBinder that contains the instance of the Console object
-   * @see android.app.Service#onBind(android.content.Intent)
-   */
-  @Override
-  public IBinder onBind(Intent intent) {
-    Logger.d("Service onBind called");
-    return this.binder;
-  }
-  
+  private API api;  
   
   // Service objects are by nature singletons enforced by Android
   @Override
   public void onCreate() {
-    Logger.d("Console onCreate called");
+    Logger.i("Console onCreate called");
     
-    this.stopRequested = false;
     this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
     
     // Hongyi: get singleton API object
     this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
-    
+
+    sendStringMsg("Console onCreate called");
     restoreState();
+    updateStatus(null);
     
     // Register activity specific BroadcastReceiver here    
     IntentFilter filter = new IntentFilter();
-    filter.addAction(MobiperfIntent.PREFERENCE_ACTION);
     filter.addAction(MobiperfIntent.MSG_ACTION);
     filter.addAction(api.userResultAction);
     filter.addAction(API.SERVER_RESULT_ACTION);    
@@ -95,9 +75,7 @@ public final class Console extends Service{
       // Handles various broadcast intents.
       @Override
       public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(MobiperfIntent.PREFERENCE_ACTION)) {
-          updateFromPreference();
-        } else if (intent.getAction().equals(api.userResultAction) ||
+        if (intent.getAction().equals(api.userResultAction) ||
             intent.getAction().equals(API.SERVER_RESULT_ACTION)) {
           Logger.d("MeasurementIntent update intent received");
           updateResultsConsole(intent);
@@ -110,6 +88,52 @@ public final class Console extends Service{
     };
     this.registerReceiver(broadcastReceiver, filter);
     addIconToStatusBar();
+  }
+  
+  /**
+   * The Binder class that returns an instance of running scheduler 
+   */
+  public class ConsoleBinder extends Binder {
+    public Console getService() {
+      return Console.this;
+    }
+  }
+
+  /**
+   * Returns a IBinder that contains the instance of the Console object
+   * @see android.app.Service#onBind(android.content.Intent)
+   */
+  @Override
+  public IBinder onBind(Intent intent) {
+    Logger.d("Console onBind called");
+    return this.binder;
+  }
+  
+  @Override
+  public void onDestroy() {
+    Logger.d("Console onDestroy called");
+    super.onDestroy();
+    cleanUp();
+  }
+  
+  private synchronized void cleanUp() {
+    Logger.i("Console cleanUp called");
+
+    this.unregisterReceiver(broadcastReceiver);
+    persistState();
+    this.notifyAll();
+    
+    removeIconFromStatusBar();
+  }
+
+  /** Request the scheduler to stop execution. */
+  public synchronized void requestStop() {
+    Logger.i("Console: stop requested");
+    sendStringMsg("Console stop requested");
+    this.notifyAll();
+    this.stopForeground(true);
+    this.removeIconFromStatusBar();
+    this.stopSelf();
   }
   
   /**
@@ -147,51 +171,6 @@ public final class Console extends Service{
   }
   
   
-  @Override 
-  public int onStartCommand(Intent intent, int flags, int startId)  {
-    Logger.d("Service onStartCommand called, isSchedulerStarted = " + isSchedulerStarted);
-    // Start up the thread running the service. Using one single thread for all requests
-    Logger.i("starting console");
-    sendStringMsg("Scheduler starting");
-    if (!isSchedulerStarted) {
-      restoreState();
-      updateFromPreference();
-//      this.resume();
-      isSchedulerStarted = true;
-    }
-    return START_STICKY;
-  }
-  
-  @Override
-  public void onDestroy() {
-    Logger.d("Service onDestroy called");
-    super.onDestroy();
-    cleanUp();
-  }
-  
-  /** 
-   * Prevents new tasks from being scheduled. Started task will still run to finish. 
-   */
-//  public synchronized void pause() {
-//    Logger.d("Service pause called");
-//    sendStringMsg("Scheduler pausing");
-//    this.pauseRequested = true;
-//    updateStatus();
-//  }
-  
-//  /** Enables new tasks to be scheduled */
-//  public synchronized void resume() {
-//    Logger.d("Service resume called");
-//    sendStringMsg("Scheduler resuming");
-//    updateStatus(null); 
-//  }
-  
-  /** Return whether new tasks can be scheduled */
-//  public synchronized boolean isPauseRequested() {
-//    return this.pauseRequested;
-//  }
-  
-  
   @SuppressWarnings("unused")
   private void updateNotificationBar(String notificationMsg) {
     //The intent to launch when the user clicks the expanded notification
@@ -211,89 +190,17 @@ public final class Console extends Service{
 
   /**
    * Write a string to the system console.
+   * TODO(Hongyi): check whether we can merge it with Logger
    */
   public void sendStringMsg(String str) {
     MobiperfIntent intent = new MobiperfIntent(str, MobiperfIntent.MSG_ACTION);
     this.sendBroadcast(intent);    
   }
-
-  /** Request the scheduler to stop execution. */
-  public synchronized void requestStop() {
-    sendStringMsg("Scheduler stop requested");
-    this.stopRequested = true;
-    this.notifyAll();
-    this.stopForeground(true);
-    this.removeIconFromStatusBar();
-    this.stopSelf();
-  }
-  
-  private synchronized void cleanUp() {
-    Logger.d("Service cleanUp called");
-
-    this.isSchedulerStarted = false;
-    this.unregisterReceiver(broadcastReceiver);
-    persistState();
-    this.notifyAll();
-    
-    removeIconFromStatusBar();
-
-    Logger.i("Shut down all executors and stopping service");
-  }
-  
-  
-//  @SuppressWarnings("unused")
-//  private synchronized boolean isStopRequested() {
-//    return this.stopRequested;
-//  }
-
-  /**
-   * Return a read-only list of the user results.
-   */
-  public synchronized List<String> getUserResults() {
-    return Collections.unmodifiableList(userResults);
-  }
-  
-  /**
-   * Return a read-only list of the system results.
-   */
-  public synchronized List<String> getSystemResults() {
-    return Collections.unmodifiableList(systemResults);
-  }
-
-  /**
-   * Return a read-only list of the system console messages.
-   */
-  public synchronized List<String> getSystemConsole() {
-    return Collections.unmodifiableList(systemConsole);
-  }
-  
-  public void updateFromPreference() {
-    Logger.d("Console updateFromPreference called");
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(
-        this);
-    try {
-//      powerManager.setBatteryThresh(Integer.parseInt(
-//          prefs.getString(getString(R.string.batteryMinThresPrefKey),
-//          String.valueOf(Config.DEFAULT_BATTERY_THRESH_PRECENT))));
-//      
-//      this.setCheckinInterval(Integer.parseInt(
-//          prefs.getString(getString(R.string.checkinIntervalPrefKey),
-//          String.valueOf(Config.DEFAULT_CHECKIN_INTERVAL_SEC / 3600))) * 3600);
-      
-      updateStatus(null);
-      
-//      Logger.i("Preference set from SharedPreference: " + 
-//          "checkinInterval=" + checkinIntervalSec +
-//          ", minBatThres= " + powerManager.getBatteryThresh());
-    } catch (ClassCastException e) {
-      Logger.e("exception when casting preference values", e);
-    }
-  }
   
   /**
    * Broadcast an intent to update the system status.
    */
-  public void updateStatus(String statusMsg) {//TODO called by updateFromPreference() , checkin,  call(), pause(), resume(): prints completedMeasurementCnt + " completed, " + failedMeasurementCnt ...
+  public void updateStatus(String statusMsg) {
     Intent intent = new Intent();
     intent.setAction(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION);
     intent.putExtra(MobiperfIntent.STATUS_MSG_PAYLOAD, statusMsg);
@@ -398,11 +305,7 @@ public final class Console extends Service{
     
     userPausedTasks=new ArrayList<String>();
     restoreConsole(userPausedTasks, MobiperfConfig.PREF_KEY_USER_PAUSED_TASKS);
-    
-    
   }
-  
-  
 
   /**
    * Restores content for consoleContent with the key prefKey.
@@ -428,8 +331,6 @@ public final class Console extends Service{
       }
     }
   }
-  
-  
 
   /**
    * Adds a string to the corresponding console depending on whether the result is a user
@@ -490,8 +391,6 @@ public final class Console extends Service{
     }
   }
   
- 
-  
   public synchronized void addUserTask(String taskId,String desc){
 	  userTasks.add(taskId+","+desc);
   }
@@ -534,5 +433,25 @@ public final class Console extends Service{
 	  }
 	  return false;
   }
+
+  /**
+   * Return a read-only list of the user results.
+   */
+  public synchronized List<String> getUserResults() {
+    return Collections.unmodifiableList(userResults);
+  }
   
+  /**
+   * Return a read-only list of the system results.
+   */
+  public synchronized List<String> getSystemResults() {
+    return Collections.unmodifiableList(systemResults);
+  }
+
+  /**
+   * Return a read-only list of the system console messages.
+   */
+  public synchronized List<String> getSystemConsole() {
+    return Collections.unmodifiableList(systemConsole);
+  }
 }
