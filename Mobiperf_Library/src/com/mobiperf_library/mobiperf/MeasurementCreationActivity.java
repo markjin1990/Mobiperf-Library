@@ -94,9 +94,6 @@ public class MeasurementCreationActivity extends Activity {
     Button runButton = (Button) this.findViewById(R.id.runTaskButton);
     runButton.setOnClickListener(new ButtonOnClickListener());
     
-    // Randomly select a name
-    String[] measurementNames = API.getMeasurementNames().toArray(new String[API.getMeasurementNames().size()]);
-    this.measurementTypeUnderEdit = measurementNames[0];
     setupEditTextFocusChangeListener();
 
     this.udpDir = "Up";
@@ -126,12 +123,6 @@ public class MeasurementCreationActivity extends Activity {
     text.setOnFocusChangeListener(textFocusChangeListener);
     text = (EditText) findViewById(R.id.dnsLookupText);
     text.setOnFocusChangeListener(textFocusChangeListener);
-  }
-
-  @Override
-  protected void onStart() {
-    super.onStart();
-    this.populateMeasurementSpecificArea();
   }
 
   private void clearMeasurementSpecificViews(TableLayout table) {
@@ -301,9 +292,6 @@ public class MeasurementCreationActivity extends Activity {
      */
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-      /**
-       * TODO(Hongyi): expose getTypeForMeasurementName in API
-       */
       measurementTypeUnderEdit =
           API.getTypeForMeasurementName(spinnerValues.getItem((int) id));
       if (measurementTypeUnderEdit != null) {
