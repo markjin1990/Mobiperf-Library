@@ -22,8 +22,6 @@ public class MobiperfIntent extends Intent {
       MobiperfIntent.class.getPackage().getName();
   public static final String SYSTEM_STATUS_UPDATE_ACTION =
       PACKAGE_PREFIX + ".SYSTEM_STATUS_UPDATE_ACTION";
-  public static final String MSG_ACTION =
-      PACKAGE_PREFIX + ".MSG_ACTION";
   public static final String SCHEDULER_CONNECTED_ACTION =
       PACKAGE_PREFIX + ".SCHEDULER_CONNECTED_ACTION";
   

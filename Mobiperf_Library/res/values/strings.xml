@@ -9,13 +9,9 @@
     <string name="anonymousServerUrl">https://openmobiledata.appspot.com/anonymous</string>
     <string name="testServerUrl"></string>
     <string name="menuQuit">Quit</string>
-    <string name="menumPause">Pause</string>
-    <string name="pauseMessage">MobiPerf is paused.</string>
-    <string name="menuResume">Resume</string>
     <string name="resumeMessage">MobiPerf is running.</string>
     <string name="menuSettings">Settings</string>
     <string name="menuAbout">About</string>
-    <string name="menuLog">System Log</string>
     <string name="measurementTypePrompt">Measurement Type</string>
     <string name="defaultDomain">www.google.com</string>
     <string name="pingTargetHint">www.google.com</string>

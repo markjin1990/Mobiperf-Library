@@ -126,18 +126,6 @@ public class SpeedometerApp extends TabActivity {
    return tabHost;
  }
  
-// private void setPauseIconBasedOnSchedulerState(MenuItem item) {
-//   if (this.scheduler != null && item != null) {
-//     if (this.scheduler.isPauseRequested()) {
-//       item.setIcon(android.R.drawable.ic_media_play);
-//       item.setTitle(R.string.menuResume);
-//     } else {
-//       item.setIcon(android.R.drawable.ic_media_pause);
-//       item.setTitle(R.string.menumPause);
-//     }
-//   }
-// }
- 
  /** Populate the application menu. Only called once per onCreate() */
  @Override
  public boolean onCreateOptionsMenu(Menu menu) {
@@ -146,32 +134,11 @@ public class SpeedometerApp extends TabActivity {
    return true;
  }
  
-// /** Adjust menu items depending on system state. Called every time the
-//  *  menu pops up */
-// @Override
-// public boolean onPrepareOptionsMenu (Menu menu) {
-//   setPauseIconBasedOnSchedulerState(menu.findItem(R.id.menuPauseResume));
-//   return true;
-// }
- 
  /** React to menu item selections */
  @Override
  public boolean onOptionsItemSelected(MenuItem item) {
    // Handle item selection
    switch (item.getItemId()) {
-     case R.id.menuPauseResume:
-       /**
-        * TODO(Hongyi): shall we still support pausing executing server tasks 
-        * in scheduler?
-        */
-//       if (this.scheduler != null) {
-//         if (this.scheduler.isPauseRequested()) {
-//           this.scheduler.resume();
-//         } else {
-//           this.scheduler.pause();
-//         }
-//       }
-       return true;
      case R.id.menuQuit: {
        Logger.i("User requests exit. Quitting the app");
        quitApp();
@@ -186,11 +153,6 @@ public class SpeedometerApp extends TabActivity {
        Logger.i("Show about page");
        Intent intent = new Intent(getBaseContext(), About.class);
        startActivity(intent);
-       return true;
-     }
-     case R.id.menuLog: {
-//       Intent intent = new Intent(getBaseContext(), SystemConsoleActivity.class);
-//       startActivity(intent);
        return true;
      }
      default:
@@ -277,9 +239,6 @@ public class SpeedometerApp extends TabActivity {
    
 
    api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
-//   // We only need one instance of the Console thread
-//   intent = new Intent(this, Console.class);
-//   this.startService(intent);
    // Bind to the scheduler service for only once during the lifetime of the activity
    this.bindToService();
    
@@ -297,25 +256,6 @@ public class SpeedometerApp extends TabActivity {
    }
  }
  
- 
-// private void initializeStatusBar() {
-//   if (this.scheduler.isPauseRequested()) {
-//     updateStatusBar(SpeedometerApp.this.getString(R.string.pauseMessage));
-//   } else if (!scheduler.hasBatteryToScheduleExperiment()) {
-//     updateStatusBar(SpeedometerApp.this.getString(R.string.powerThreasholdReachedMsg));
-//   } else {
-//     MeasurementTask currentTask = scheduler.getCurrentTask();
-//     if (currentTask != null) {
-//       if (currentTask.getDescription().priority == API.USER_PRIORITY) {
-//         updateStatusBar("User task " + currentTask.getDescriptor() + " is running");
-//       } else {
-//         updateStatusBar("System task " + currentTask.getDescriptor() + " is running");
-//       }
-//     } else {
-//       updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
-//     }
-//   }
-// }
 
  private void updateStatusBar(String statusMsg) {
    if (statusMsg != null) {
@@ -372,8 +312,6 @@ public class SpeedometerApp extends TabActivity {
                recordUserConsent();
                // Enable auto start on boot.
                setStartOnBoot(true);
-               // Force a checkin now since the one initiated by the scheduler was likely skipped.
-//               doCheckin();
              }
          })
           .setNegativeButton("No thanks", new DialogInterface.OnClickListener() {
@@ -385,11 +323,11 @@ public class SpeedometerApp extends TabActivity {
  }
  
  
- @Override
- protected void onStart() {
-   Logger.e("SpeedometerApp-> onStart called");
-   super.onStart();
- }
+// @Override
+// protected void onStart() {
+//   Logger.e("SpeedometerApp-> onStart called");
+//   super.onStart();
+// }
  
 // @Override
 // protected void onStop() {
@@ -415,7 +353,7 @@ public class SpeedometerApp extends TabActivity {
  protected void onDestroy() {
    Logger.e("SpeedometerApp-> onDestroy called");
    super.onDestroy();
-   api.unbind();
+//   api.unbind();
    if ( isBound ) {
      unbindService(serviceConn);
      isBound = false;
@@ -426,10 +364,10 @@ public class SpeedometerApp extends TabActivity {
  private void quitApp() {
    Logger.e("SpeedometerApp-> quitApp called");
    api.unbind();
-   if (isBound) {
-     unbindService(serviceConn);
-     isBound = false;
-   }
+//   if (isBound) {
+//     unbindService(serviceConn);
+//     isBound = false;
+//   }
    if (this.console != null) {
      Logger.d("requesting Console stop");
      console.requestStop();
@@ -441,17 +379,8 @@ public class SpeedometerApp extends TabActivity {
    setStartOnBoot(false);
    
    this.finish();
-   System.exit(0);
+   //System.exit(0);
  }
-
- /**
-  * TODO(Hongyi): change to API function
-  */
-// private void doCheckin() {
-//   if (scheduler != null) {
-//     scheduler.handleCheckin(true);
-//   }
-// }
  
  /** Set preference to indicate whether start on boot is enabled. */
  private void setStartOnBoot(boolean startOnBoot) {

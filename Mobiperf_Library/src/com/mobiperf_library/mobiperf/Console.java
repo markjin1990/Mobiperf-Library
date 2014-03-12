@@ -46,7 +46,6 @@ public final class Console extends Service{
   
   private ArrayList<String> userResults;
   private ArrayList<String> systemResults;
-  private ArrayList<String> systemConsole;
   private volatile ArrayList<String> userTasks;
   private volatile ArrayList<String> userPausedTasks;
   
@@ -62,13 +61,11 @@ public final class Console extends Service{
     // Hongyi: get singleton API object
     this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
 
-    sendStringMsg("Console onCreate called");
     restoreState();
     updateStatus(null);
     
     // Register activity specific BroadcastReceiver here    
     IntentFilter filter = new IntentFilter();
-    filter.addAction(MobiperfIntent.MSG_ACTION);
     filter.addAction(api.userResultAction);
     filter.addAction(API.SERVER_RESULT_ACTION);    
     broadcastReceiver = new BroadcastReceiver() {
@@ -79,10 +76,6 @@ public final class Console extends Service{
             intent.getAction().equals(API.SERVER_RESULT_ACTION)) {
           Logger.d("MeasurementIntent update intent received");
           updateResultsConsole(intent);
-        } else if (intent.getAction().equals(MobiperfIntent.MSG_ACTION)) {
-          String msg = intent.getExtras().getString(MobiperfIntent.STRING_PAYLOAD);
-          Date now = Calendar.getInstance().getTime();
-          insertStringToConsole(systemConsole, now + "\n\n" + msg);
         }
       }
     };
@@ -129,7 +122,6 @@ public final class Console extends Service{
   /** Request the scheduler to stop execution. */
   public synchronized void requestStop() {
     Logger.i("Console: stop requested");
-    sendStringMsg("Console stop requested");
     this.notifyAll();
     this.stopForeground(true);
     this.removeIconFromStatusBar();
@@ -187,15 +179,6 @@ public final class Console extends Service{
 
     notificationManager.notify(NOTIFICATION_ID, notice);
   }
-
-  /**
-   * Write a string to the system console.
-   * TODO(Hongyi): check whether we can merge it with Logger
-   */
-  public void sendStringMsg(String str) {
-    MobiperfIntent intent = new MobiperfIntent(str, MobiperfIntent.MSG_ACTION);
-    this.sendBroadcast(intent);    
-  }
   
   /**
    * Broadcast an intent to update the system status.
@@ -217,7 +200,6 @@ public final class Console extends Service{
   public synchronized void persistState() {//TODO called by handleMeasurement(), cleanUp(),  checkin(),  call()
     saveConsoleContent(systemResults, MobiperfConfig.PREF_KEY_SYSTEM_RESULTS);
     saveConsoleContent(userResults, MobiperfConfig.PREF_KEY_USER_RESULTS);
-    saveConsoleContent(systemConsole, MobiperfConfig.PREF_KEY_SYSTEM_CONSOLE);
     saveConsoleContent(userTasks, MobiperfConfig.PREF_KEY_USER_TASKS);
     saveConsoleContent(userPausedTasks, MobiperfConfig.PREF_KEY_USER_PAUSED_TASKS);
     saveStats();
@@ -296,9 +278,6 @@ public final class Console extends Service{
       insertStringToConsole(userResults,
           "Your measurement results will appear here.");
     }
-
-    systemConsole = new ArrayList<String>();
-    restoreConsole(systemConsole, MobiperfConfig.PREF_KEY_SYSTEM_CONSOLE);
     
     userTasks=new ArrayList<String>();
     restoreConsole(userTasks, MobiperfConfig.PREF_KEY_USER_TASKS);
@@ -446,12 +425,5 @@ public final class Console extends Service{
    */
   public synchronized List<String> getSystemResults() {
     return Collections.unmodifiableList(systemResults);
-  }
-
-  /**
-   * Return a read-only list of the system console messages.
-   */
-  public synchronized List<String> getSystemConsole() {
-    return Collections.unmodifiableList(systemConsole);
   }
 }
