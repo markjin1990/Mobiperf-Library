@@ -80,11 +80,18 @@ public class MeasurementCreationActivity extends Activity {
     
     this.api = API.getAPI(parent, MobiperfConfig.CLIENT_KEY);
     this.console = parent.getConsole();
-    Logger.e("MeasurementCreationActivity: console is " + console);
-    
+
+    // adding list of visible measurements
     for (String name : API.getMeasurementNames()) {
-      // adding list of visible measurements
-      spinnerValues.add(name);
+      /**
+       *  TODO(Hongyi): Avoid keyboard popup problem.
+       */
+      if (name.equals(TCPThroughputTask.DESCRIPTOR)) {
+        spinnerValues.insert(name, 0);
+      }
+      else {
+        spinnerValues.add(name);
+      }
     }
     spinnerValues.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
     spinner.setAdapter(spinnerValues);
@@ -107,6 +114,8 @@ public class MeasurementCreationActivity extends Activity {
     radioUDPUp.setChecked(true);
     radioUDPUp.setOnClickListener(new UDPRadioOnClickListener());
     radioUDPDown.setOnClickListener(new UDPRadioOnClickListener());
+    Button udpSettings = (Button)findViewById(R.id.UDPSettingsButton);
+    udpSettings.setOnClickListener(new UDPSettingsOnClickListener());
     
     radioTCPUp.setChecked(true);
     radioTCPUp.setOnClickListener(new TCPRadioOnClickListener());
@@ -132,10 +141,9 @@ public class MeasurementCreationActivity extends Activity {
     }
   }
 
-  /**
-   * TODO(Hongyi): user should not directly use those measurement task here?
-   */
   private void populateMeasurementSpecificArea() {
+    Button runButton = (Button) this.findViewById(R.id.runTaskButton);
+    runButton.setOnClickListener(new ButtonOnClickListener());
     TableLayout table = (TableLayout) this.findViewById(R.id.measurementCreationLayout);
     this.clearMeasurementSpecificViews(table);
     if (this.measurementTypeUnderEdit.compareTo(PingTask.TYPE) == 0) {
@@ -148,12 +156,14 @@ public class MeasurementCreationActivity extends Activity {
       this.findViewById(R.id.dnsTargetView).setVisibility(View.VISIBLE);
     } else if (this.measurementTypeUnderEdit.compareTo(UDPBurstTask.TYPE) == 0) {
       this.findViewById(R.id.UDPBurstDirView).setVisibility(View.VISIBLE);
+      this.findViewById(R.id.UDPSettingsButton).setVisibility(View.VISIBLE);
     } else if (this.measurementTypeUnderEdit.compareTo(TCPThroughputTask.TYPE) == 0) {
       this.findViewById(R.id.TCPThroughputDirView).setVisibility(View.VISIBLE);
     }
   }
+  
 
-  private void hideKyeboard(EditText textBox) {
+  private void hideKeyboard(EditText textBox) {
     if (textBox != null) {
       InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
       imm.hideSoftInputFromWindow(textBox.getWindowToken(), 0);
@@ -167,7 +177,29 @@ public class MeasurementCreationActivity extends Activity {
       MeasurementCreationActivity.this.udpDir = (String) rb.getText();
     }
   }
-
+  
+  private class UDPSettingsOnClickListener implements OnClickListener {
+    private boolean isShowSettings = false;
+    @Override
+    public void onClick(View v) {
+      Button b = (Button)v;
+      if ( isShowSettings == false ) {
+        isShowSettings = true;
+        b.setText("Collapse Advanced Settings");
+        findViewById(R.id.UDPBurstPacketSizeView).setVisibility(View.VISIBLE);
+        findViewById(R.id.UDPBurstPacketCountView).setVisibility(View.VISIBLE);
+        findViewById(R.id.UDPBurstIntervalView).setVisibility(View.VISIBLE);
+      }
+      else {
+        isShowSettings = false;
+        b.setText("Expand Advanced Settings");
+        findViewById(R.id.UDPBurstPacketSizeView).setVisibility(View.GONE);
+        findViewById(R.id.UDPBurstPacketCountView).setVisibility(View.GONE);
+        findViewById(R.id.UDPBurstIntervalView).setVisibility(View.GONE);
+      }
+    }
+  }
+  
   private class TCPRadioOnClickListener implements OnClickListener {
     @Override
     public void onClick(View v) {
@@ -212,6 +244,21 @@ public class MeasurementCreationActivity extends Activity {
           // m-lab.
           params.put("target", MLabNS.TARGET);
           params.put("direction", udpDir);
+          // Get UDP Burst packet size
+          EditText UDPBurstPacketSizeText = 
+              (EditText) findViewById(R.id.UDPBurstPacketSizeText);
+          params.put("packet_size_byte"
+            , UDPBurstPacketSizeText.getText().toString());
+          // Get UDP Burst packet count
+          EditText UDPBurstPacketCountText = 
+              (EditText) findViewById(R.id.UDPBurstPacketCountText);
+          params.put("packet_burst"
+            , UDPBurstPacketCountText.getText().toString());
+          // Get UDP Burst interval
+          EditText UDPBurstIntervalText = 
+              (EditText) findViewById(R.id.UDPBurstIntervalText);
+          params.put("udp_interval"
+            , UDPBurstIntervalText.getText().toString());
           taskTarget=udpDir;
           measurementType = TaskType.UDPBURST;
         } else if (measurementTypeUnderEdit.equals(TCPThroughputTask.TYPE)) {
@@ -279,7 +326,7 @@ public class MeasurementCreationActivity extends Activity {
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
       if (!hasFocus) {
-        hideKyeboard((EditText) v);
+        hideKeyboard((EditText) v);
       }
     }
   }

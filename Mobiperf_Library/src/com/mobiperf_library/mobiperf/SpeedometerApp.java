@@ -48,7 +48,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mobilyzer.AccountSelector;
+import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.api.API;
+import com.mobilyzer.exceptions.MeasurementError;
 /**
 * The main UI thread that manages different tabs
 */
@@ -116,6 +118,9 @@ public class SpeedometerApp extends TabActivity {
      Logger.d("Bind to console is called");
      Logger.e("SpeedometerApp-> bindToService called 2");
      Intent intent = new Intent(this, Console.class);
+     // Make console a started service
+     // so it won't be destroyed when activity is destroyed.
+     startService(intent);
      bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
      isBindingToService = true;
    }
@@ -166,14 +171,9 @@ public class SpeedometerApp extends TabActivity {
    Logger.e("SpeedometerApp-> onCreate()");
    super.onCreate(savedInstanceState);
    setContentView(R.layout.main);
-
-   restoreDefaultAccount();
-   if (selectedAccount == null) {
-     showDialog(DIALOG_ACCOUNT_SELECTOR);
-   } else {
-     // double check the user consent selection
-     consentDialogWrapper();
-   }
+   
+   // double check the user consent selection
+   consentDialogWrapper();
    
    /* Set the DNS cache TTL to 0 such that measurements can be more accurate.
     * However, it is known that the current Android OS does not take actions
@@ -207,40 +207,51 @@ public class SpeedometerApp extends TabActivity {
    tabHost.addTab(spec);
 
    tabHost.setCurrentTabByTag(MeasurementCreationActivity.TAB_TAG);
-
+   
    statusBar = (TextView) findViewById(R.id.systemStatusBar);
    statsBar = (TextView) findViewById(R.id.systemStatsBar);
 
+   // Connected to Mobilyzer and console service
+   api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
+   try {
+     api.getAuthenticateAccount();
+   } catch (MeasurementError e) {
+     Logger.e("Error in get auth account", e);
+   }
+   this.bindToService();
+   
    IntentFilter filter = new IntentFilter();
    filter.addAction(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION);
+   filter.addAction(api.authAccountAction);
    this.receiver = new BroadcastReceiver() {
      @Override
      // All onXyz() callbacks are single threaded
      public void onReceive(Context context, Intent intent) {
-       // Update the status bar on SYSTEM_STATUS_UPDATE_ACTION intents
-       String statusMsg = intent.getStringExtra(MobiperfIntent.STATUS_MSG_PAYLOAD);
-       if (statusMsg != null) {
-         updateStatusBar(statusMsg);
+       if (intent.getAction().equals(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION)) {
+         // Update the status bar on SYSTEM_STATUS_UPDATE_ACTION intents
+         String statusMsg = intent.getStringExtra(MobiperfIntent.STATUS_MSG_PAYLOAD);
+         if (statusMsg != null) {
+           updateStatusBar(statusMsg);
+         }
+         else {
+           updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
+         }
+
+         String statsMsg = intent.getStringExtra(MobiperfIntent.STATS_MSG_PAYLOAD);
+         if (statsMsg != null) {
+           updateStatsBar(statsMsg);
+         }
        }
-       else {
-         updateStatusBar(SpeedometerApp.this.getString(R.string.resumeMessage));
-       }
-//       } else if (scheduler != null) {
-//         initializeStatusBar();
-//       }
-       
-       String statsMsg = intent.getStringExtra(MobiperfIntent.STATS_MSG_PAYLOAD);
-       if (statsMsg != null) {
-         updateStatsBar(statsMsg);
+       else if (intent.getAction().equals(api.authAccountAction)) {
+         String account = intent.getStringExtra(UpdateIntent.AUTH_ACCOUNT_PAYLOAD);
+         if (account == null) {
+           showDialog(DIALOG_ACCOUNT_SELECTOR);
+         }
        }
      }
    };
    this.registerReceiver(this.receiver, filter);
    
-
-   api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
-   // Bind to the scheduler service for only once during the lifetime of the activity
-   this.bindToService();
    
  }
  
@@ -280,11 +291,11 @@ public class SpeedometerApp extends TabActivity {
      public void onClick(DialogInterface dialog, int item) {
        Toast.makeText(getApplicationContext(),
            items[item] + " " + getString(R.string.selectedString), Toast.LENGTH_SHORT).show();
-       
-       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-       SharedPreferences.Editor editor = prefs.edit();
-       editor.putString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, (String) items[item]);
-       editor.commit();
+       try {
+         api.setAuthenticateAccount((String) items[item]);
+       } catch (MeasurementError e) {
+         Logger.e("Error when setting account", e);
+       }
        dialog.dismiss();
        // need consent dialog when user first perform the account selection
        consentDialogWrapper();
@@ -322,38 +333,10 @@ public class SpeedometerApp extends TabActivity {
    return builder.create();
  }
  
- 
-// @Override
-// protected void onStart() {
-//   Logger.e("SpeedometerApp-> onStart called");
-//   super.onStart();
-// }
- 
-// @Override
-// protected void onStop() {
-//   Logger.d("onStop called");
-//   Logger.e("SpeedometerApp-> onStop called");
-//   super.onStop();
-//   api.unbind();
-//   if (isBound) {
-//     unbindService(serviceConn);
-//     isBound = false;
-//   }
-// }
- 
-// @Override
-// protected void onResume() {
-//   Logger.d("Hongyi: onResume called");
-//   Logger.e("SpeedometerApp-> onResume called");
-//   bindToService();
-//   api.bind();
-//   super.onResume();
-// }
  @Override
  protected void onDestroy() {
    Logger.e("SpeedometerApp-> onDestroy called");
    super.onDestroy();
-//   api.unbind();
    if ( isBound ) {
      unbindService(serviceConn);
      isBound = false;
@@ -364,10 +347,10 @@ public class SpeedometerApp extends TabActivity {
  private void quitApp() {
    Logger.e("SpeedometerApp-> quitApp called");
    api.unbind();
-//   if (isBound) {
-//     unbindService(serviceConn);
-//     isBound = false;
-//   }
+   if (isBound) {
+     unbindService(serviceConn);
+     isBound = false;
+   }
    if (this.console != null) {
      Logger.d("requesting Console stop");
      console.requestStop();
@@ -379,7 +362,6 @@ public class SpeedometerApp extends TabActivity {
    setStartOnBoot(false);
    
    this.finish();
-   //System.exit(0);
  }
  
  /** Set preference to indicate whether start on boot is enabled. */
@@ -403,14 +385,6 @@ public class SpeedometerApp extends TabActivity {
    SharedPreferences.Editor editor = prefs.edit();
    editor.putBoolean(MobiperfConfig.PREF_KEY_CONSENTED, userConsented);
    editor.commit();
- }
- 
- /**
-  * Restore the last used account
-  */
- private void restoreDefaultAccount() {
-   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-   selectedAccount = prefs.getString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, null);
  }
  
  /**

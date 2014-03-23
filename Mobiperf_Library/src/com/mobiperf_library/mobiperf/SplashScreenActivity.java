@@ -15,6 +15,7 @@
 
 package com.mobiperf_library.mobiperf;
 
+import com.mobilyzer.util.Logger;
 import com.mobiperf_library.R;
 
 import android.app.Activity;
@@ -22,14 +23,18 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 /**
  * The splash screen for Speedometer
  */
 public class SplashScreenActivity extends Activity {
+  private Bitmap logo;
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -37,9 +42,14 @@ public class SplashScreenActivity extends Activity {
     // Make sure the splash screen is shown in portrait orientation
     this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
-    
+    // Show Logo
+    ImageView logoView = (ImageView)findViewById(R.id.splash_logo);
+    logo = BitmapFactory.decodeResource(getResources(), R.drawable.splashscreen);
+    if (logo != null) {
+      logoView.setImageBitmap(logo);
+    }
+    // Display version
     TextView version = (TextView)findViewById(R.id.splash_version);
-    
     try {
       PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
       version.setText(pInfo.versionName);
@@ -56,7 +66,14 @@ public class SplashScreenActivity extends Activity {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         SplashScreenActivity.this.getApplication().startActivity(intent);
         SplashScreenActivity.this.finish();
+        // Recycle logo bitmap to avoid OOM exception
+        if (logo.isRecycled() == false) {
+          Logger.i("Recycle logo bitmap");
+          logo.recycle();
+          System.gc();
+        }
       }
     }, MobiperfConfig.SPLASH_SCREEN_DURATION_MSEC);
+
   }
 }

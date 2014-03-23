@@ -16,6 +16,7 @@
 package com.mobiperf_library.mobiperf;
 
 import com.mobilyzer.AccountSelector;
+import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementScheduler.DataUsageProfile;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.api.API;
@@ -27,14 +28,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 /**
@@ -47,6 +46,10 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
   private EditTextPreference batteryPref;
   private ListPreference accountPref;
   private ListPreference dataLimitPref;
+  private final String[] dataLimitName = 
+    { "50 MB", "100 MB", "250 MB", "500 MB", "Unlimited" };
+  private final String[] dataLimitProfile = 
+    { "PROFILE1", "PROFILE2", "PROFILE3", "PROFILE4", "UNLIMITED" };
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -68,19 +71,11 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
       return;
     }
     
-    // Setting data limit
-    final String[] dataLimitName = 
-      { "PROFILE 1", "PROFILE 2", "PROFILE 3", "PROFILE 4", "UNLIMITED" };
-    final String[] dataLimitProfile = 
-      { "PROFILE1", "PROFILE2", "PROFILE3", "PROFILE4", "UNLIMITED" };
-    dataLimitPref.setEntries(dataLimitName);
-    dataLimitPref.setEntryValues(dataLimitProfile);
-
-    
     IntentFilter filter = new IntentFilter();
     filter.addAction(api.batteryThresholdAction);
     filter.addAction(api.checkinIntervalAction);
     filter.addAction(api.dataUsageAction);
+    filter.addAction(api.authAccountAction);
     this.receiver = new BroadcastReceiver() {
       @Override
       public void onReceive(Context context, Intent intent) {
@@ -89,6 +84,9 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
           int threshold = intent.getIntExtra(UpdateIntent.BATTERY_THRESHOLD_PAYLOAD, -1);
           if ( threshold != -1 ) {
             Logger.i("Current battery threshold " + threshold);
+            Toast.makeText(SpeedometerPreferenceActivity.this
+              , "Stop checkin when battery is below " + threshold + "%"
+              , Toast.LENGTH_SHORT).show();
             batteryPref.setText(String.valueOf(threshold));
           }
           else {
@@ -99,6 +97,9 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
           long interval = intent.getLongExtra(UpdateIntent.CHECKIN_INTERVAL_PAYLOAD, -1);
           if ( interval != -1 ) {
             Logger.i("Current checkin interval " + interval);
+            Toast.makeText(SpeedometerPreferenceActivity.this
+              , "Check in every " + (interval / 3600) + " hour"
+              , Toast.LENGTH_SHORT).show();
             intervalPref.setText(String.valueOf(interval / 3600));
           }
           else {
@@ -110,10 +111,20 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
               intent.getSerializableExtra(UpdateIntent.DATA_USAGE_PAYLOAD);
           if ( profile != null ) {
             Logger.i("Current data usage profile " + profile);
+            Toast.makeText(SpeedometerPreferenceActivity.this
+              , "Current Data limitation: " + dataLimitName[profile.ordinal()] + " per month"
+              , Toast.LENGTH_SHORT).show();
             dataLimitPref.setValue(profile.toString());
           }
           else {
             Logger.e("No data usage profile found");
+          }
+        }
+        else if (action.equals(api.authAccountAction)) {
+          String account = intent.getStringExtra(UpdateIntent.AUTH_ACCOUNT_PAYLOAD);
+          if (account != null) {
+            Logger.i("Current authentication account: " + account);
+            accountPref.setValue(account);
           }
         }
         else {
@@ -123,11 +134,12 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
     };
     this.registerReceiver(receiver, filter);
     
-    // Hongyi: Update parameter values in SharedPreference 
+    // Hongyi: Update values in SharedPreference
     try {
       api.getBatteryThreshold();
       api.getCheckinInterval();
       api.getDataUsage();
+      api.getAuthenticateAccount();
     } catch (MeasurementError e) {
       Logger.e("Error initialize scheduler properties: " + e.getMessage());
     }
@@ -135,7 +147,6 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
     /**
      * Setting checkin interval, battery threshold
      */
-
     OnPreferenceChangeListener prefChangeListener = new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -169,14 +180,15 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
         } else if (prefKey.compareTo(getString(R.string.batteryMinThresPrefKey)) == 0) {
           try {
             Integer val = Integer.parseInt((String) newValue);
-            if (val < 0 || val > 100) {
+            if (val < Config.MIN_BATTERY_THRESHOLD 
+                || val > Config.MAX_BATTERY_THRESHOLD) {
               Toast.makeText(SpeedometerPreferenceActivity.this,
                   getString(R.string.invalidBatteryToast), Toast.LENGTH_LONG).show();
               return false;
             }
             else {
               api.setBatteryThreshold(val);
-              // Update data usage profile in SharedPreference
+              // Update value in SharedPreference
               api.getBatteryThreshold();
               return true;
             }
@@ -203,28 +215,25 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
     final CharSequence[] items = AccountSelector.getAccountList(getApplicationContext());
     accountPref.setEntries(items);
     accountPref.setEntryValues(items);
-   
-    // Restore current settings.
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    String selectedAccount = prefs.getString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, null);
-    if (selectedAccount != null) {
-      accountPref.setValue(selectedAccount);
-    }
-    
     accountPref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
         final String account = newValue.toString();
         Logger.i("account selected is: " + account);
-        
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(MobiperfConfig.PREF_KEY_SELECTED_ACCOUNT, account);
-        editor.commit();
+        try {
+          api.setAuthenticateAccount(account);
+        } catch (MeasurementError e) {
+          Logger.e("Error update auth account", e);
+        }
         return true;
       }
     });
-    
+
+    /**
+     * Setting data limitation
+     */
+    dataLimitPref.setEntries(dataLimitName);
+    dataLimitPref.setEntryValues(dataLimitProfile);
     dataLimitPref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {

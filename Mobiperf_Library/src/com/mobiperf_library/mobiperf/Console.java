@@ -2,10 +2,7 @@ package com.mobiperf_library.mobiperf;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
-
 import java.util.List;
 
 import com.google.myjson.reflect.TypeToken;
@@ -60,9 +57,8 @@ public final class Console extends Service{
     
     // Hongyi: get singleton API object
     this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
-
+    // Load results from shared preference
     restoreState();
-    updateStatus(null);
     
     // Register activity specific BroadcastReceiver here    
     IntentFilter filter = new IntentFilter();
@@ -81,6 +77,14 @@ public final class Console extends Service{
     };
     this.registerReceiver(broadcastReceiver, filter);
     addIconToStatusBar();
+  }
+  
+  @Override
+  public int onStartCommand(Intent intent, int flags, int startId) {
+    // refresh status and stat bar
+    updateStatus(null);
+    
+    return START_STICKY;
   }
   
   /**

@@ -19,7 +19,13 @@
     <string name="tracerouteTargetLabel">Target hostname/IP?</string>
     <string name="UDPBurstTargetLabel">Server name/IP?</string>
     <string name="UDPBurstDirLabel">Direction:</string>
+    <string name="UDPBurstIntervalLabel">Interval between packets(ms): </string>
     <string name="UDPBurstTargetHint">www.google.com</string>
+    <string name="UDPBurstIntervalHint">1</string>
+    <string name="UDPBurstPacketSizeLabel">Packet Size(byte): </string>
+    <string name="UDPBurstPacketSizeHint">100</string>
+    <string name="UDPBurstPacketCountLabel">Number of packets to be sent: </string>
+    <string name="UDPBurstPacketCountHint">16</string>
     <string name="httpUrlHint">www.google.com</string>
     <string name="httpUrlLabel">URL Address</string>
     <string name="checkinIntervalPrefKey">KEY_CHECKEDIN_INTERVAL</string>
@@ -38,7 +44,7 @@
     <string name="ioExceptionMeasurementToast">Failed to run test. It\'s possible there is no network connection. Please make sure you have a network connection before running tests.</string>
     <string name="exceptionMeasurementToast">An unknown error occurred when trying to run the measurement test. Please try again.</string>
     <string name="invalidCheckinIntervalToast">Invalid setting! Please choose an interval between 1 and 24 hours</string>
-    <string name="invalidBatteryToast">Invalid setting! Please choose a battery level between 0 and 100 percent</string>
+    <string name="invalidBatteryToast">Invalid setting! Please choose a battery level between 20 and 100 percent</string>
     <string name="menuInitializationExceptionToast">Exception occurs during menu initialization.</string>
     <string name="powerThreasholdReachedMsg">Measurement paused - below battery threshold</string>
     <string name="terms">MobiPerf is a useful tool that collects network measurement results for academic research. Please see http://mobiperf.com/privacy for more details. If you agree that we can collect such information, click agree. On the account selection screen, you will have the option to submit results anonymously. If you do not agree, the application will exit.</string>
