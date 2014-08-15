@@ -16,7 +16,7 @@
 
 
 //TODO: remove duplicate/unnecessary static variables
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
 /**
 * The system defaults.

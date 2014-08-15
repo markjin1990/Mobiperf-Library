@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -21,8 +21,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import com.mobiperf_library.R;
-import com.mobiperf_library.util.Logger;
+import com.mobiperf.util.Logger;
+import com.mobiperf.R;
 
 /**
 * A broadcast receiver that starts the Speedometer service upon the BOOT_COMPLETED event.

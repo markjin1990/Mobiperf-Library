@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
 
 
-import com.mobiperf_library.R;
+import com.mobiperf.R;
 import android.app.Activity;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;

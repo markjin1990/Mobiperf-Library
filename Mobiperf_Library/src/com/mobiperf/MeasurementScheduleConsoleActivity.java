@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
 import android.app.Activity;
 import android.content.Context;
@@ -41,7 +41,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.mobilyzer.MeasurementTask;
-import com.mobiperf_library.R;
+import com.mobiperf.util.Logger;
+import com.mobiperf.R;
 import com.mobilyzer.api.API;
 import com.mobilyzer.api.API.TaskType;
 import com.mobilyzer.exceptions.MeasurementError;
@@ -51,7 +52,6 @@ import com.mobilyzer.measurements.PingTask;
 import com.mobilyzer.measurements.TCPThroughputTask;
 import com.mobilyzer.measurements.TracerouteTask;
 import com.mobilyzer.measurements.UDPBurstTask;
-import com.mobiperf_library.util.Logger;
 import com.mobilyzer.util.MLabNS;
 
 /**

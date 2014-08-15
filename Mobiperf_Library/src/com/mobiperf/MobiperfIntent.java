@@ -1,4 +1,4 @@
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
 
 

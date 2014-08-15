@@ -13,13 +13,13 @@
 * limitations under the License.
 */
 
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
 import java.security.Security;
 
-import com.mobiperf_library.R;
-import com.mobiperf_library.mobiperf.Console.ConsoleBinder;
-import com.mobiperf_library.util.Logger;
+import com.mobiperf.Console.ConsoleBinder;
+import com.mobiperf.util.Logger;
+import com.mobiperf.R;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -205,7 +205,15 @@ public class SpeedometerApp extends TabActivity {
    spec = tabHost.newTabSpec(MeasurementScheduleConsoleActivity.TAB_TAG).setIndicator(
        "Task Queue", res.getDrawable(R.drawable.ic_tab_schedules)).setContent(intent);
    tabHost.addTab(spec);
+   
+// Creates the measurement visualization console tab
+   intent = new Intent().setClass(this, VisualizationActivity.class);
+   spec = tabHost.newTabSpec(VisualizationActivity.TAB_TAG).setIndicator(
+       "Visualization", res.getDrawable(R.drawable.ic_tab_map_icon)).setContent(intent);
+   tabHost.addTab(spec);
 
+   
+   
    tabHost.setCurrentTabByTag(MeasurementCreationActivity.TAB_TAG);
    
    statusBar = (TextView) findViewById(R.id.systemStatusBar);

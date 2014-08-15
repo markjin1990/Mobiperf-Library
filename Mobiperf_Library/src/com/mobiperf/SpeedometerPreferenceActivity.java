@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
 import com.mobilyzer.AccountSelector;
 import com.mobilyzer.Config;
@@ -21,8 +21,8 @@ import com.mobilyzer.MeasurementScheduler.DataUsageProfile;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.api.API;
 import com.mobilyzer.exceptions.MeasurementError;
-import com.mobiperf_library.R;
-import com.mobiperf_library.util.Logger;
+import com.mobiperf.util.Logger;
+import com.mobiperf.R;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -161,7 +161,7 @@ public class SpeedometerPreferenceActivity extends PreferenceActivity {
             }
             else {
               // checkin interval's granularity is second level
-              api.setCheckinInterval(val * 3600);  
+              api.setCheckinInterval(val * 3600);
               // Update data usage profile in SharedPreference 
               api.getCheckinInterval();
               return true;

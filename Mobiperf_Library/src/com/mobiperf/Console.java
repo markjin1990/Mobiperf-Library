@@ -1,15 +1,25 @@
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.google.myjson.reflect.TypeToken;
 import com.mobilyzer.MeasurementResult;
-import com.mobiperf_library.R;
+import com.mobiperf.util.Logger;
+import com.mobiperf.R;
 import com.mobilyzer.UpdateIntent;
-import com.mobiperf_library.util.Logger;
+import com.mobilyzer.measurements.TCPThroughputTask.TCPThroughputDesc;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.api.API;
 
@@ -23,6 +33,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
@@ -190,7 +201,9 @@ public final class Console extends Service{
   public void updateStatus(String statusMsg) {
     Intent intent = new Intent();
     intent.setAction(MobiperfIntent.SYSTEM_STATUS_UPDATE_ACTION);
-    intent.putExtra(MobiperfIntent.STATUS_MSG_PAYLOAD, statusMsg);
+    if(statusMsg!=null){
+      intent.putExtra(MobiperfIntent.STATUS_MSG_PAYLOAD, statusMsg);
+    }
     String statsMsg =
         completedMeasurementCnt + " completed, " + failedMeasurementCnt
         + " failed";
@@ -339,6 +352,14 @@ public final class Console extends Service{
       results = new MeasurementResult[parcels.length];
       for ( int i = 0; i < results.length; i++ ) {
         results[i] = (MeasurementResult) parcels[i];
+        
+        try {
+          saveResultsToMemory(results[i], intent.getAction().equals(API.SERVER_RESULT_ACTION) );
+        } catch (IOException e) {
+          Logger.e("Error saving results on SD: "+e.getMessage());
+        }
+
+        
         if (results[i].isSucceed()) {
           this.completedMeasurementCnt++;
         }
@@ -430,4 +451,208 @@ public final class Console extends Service{
   public synchronized List<String> getSystemResults() {
     return Collections.unmodifiableList(systemResults);
   }
+  private synchronized void removeOldResults(File file) throws IOException{
+    if(file.exists()){
+      long size=file.length();
+      if(size/(1024*1024)>5){ 
+        FileInputStream fin = new FileInputStream(file);
+        BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+        ArrayList<String> all_lines=new ArrayList<String>();
+        String line="";
+        while ((line = br.readLine()) != null) {
+          all_lines.add(line);
+        }
+        br.close();
+        fin.close();
+        
+        file.delete();
+        file.createNewFile();
+        StringBuilder concatenated= new StringBuilder();
+        for(int i=all_lines.size()/2;i<all_lines.size();i++){
+          concatenated.append(all_lines.get(i)+"\n");
+        }
+        
+        FileOutputStream fos = new FileOutputStream(file, true);
+        fos.write(concatenated.toString().getBytes());
+        fos.flush();
+        fos.close();
+        all_lines.clear();
+      }
+    }
+    
+  }
+  
+  
+  /*
+   * Save the server and user results into file (sdcard). Results will be shown on the plots
+   */
+  private synchronized void saveResultsToMemory(MeasurementResult result, boolean isServerTask) throws IOException{
+    File externalStorageDir = Environment.getExternalStorageDirectory();
+    File mobiperfDir = new File(externalStorageDir.getPath()+"/Mobiperf/");
+    if(!mobiperfDir.exists()){
+      mobiperfDir.mkdirs();
+    }
+    
+    long timestamp= System.currentTimeMillis();
+    
+    File resultsFile;
+    if(isServerTask){
+      resultsFile=new File(mobiperfDir, "server_tasks.txt");
+//      Logger.e("ashnik_debug: server size "+resultsFile.length());
+    }else{
+      resultsFile=new File(mobiperfDir, "user_tasks.txt");
+//      Logger.e("ashnik_debug: user size"+resultsFile.length());
+    }
+    removeOldResults(resultsFile);
+    
+    FileOutputStream fos = new FileOutputStream(resultsFile, true);
+    
+    if(result.isSucceed()){
+      if(result.getType()=="tcpthroughput"){
+        String dir=result.getParameter("dir_up");
+        String tcp_points=result.getValues().get("tcp_speed_results");
+        double throughput=((TCPThroughputDesc)(result.getMeasurementDesc())).calMedianSpeedFromTCPThroughputOutput(tcp_points);
+        String result_str=timestamp+"|tcp|"+dir+"|"+(int)throughput+"\n";
+        fos.write(result_str.getBytes());
+        fos.flush();
+      }else if(result.getType()=="ping"){
+        String target=result.getParameter("target");
+        if (target.matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}") || target.contains(":")){
+          fos.close();
+          return;
+        }
+        if(isServerTask){
+          if (target.equals("cdn2.nflximg.net") || target.equals("fbcdn-profile-a.akamaihd.net")){
+            target="Akamai";
+          }else if(target.equals("www.google.com")){
+            target="Google";
+          }else if(target.equals("img.delvenetworks.com")){
+            target="Limelight";
+          }else if(target.equals("video-http.media-imdb.com")){
+            target="Amazon";
+          }else if(target.equals("ec-media.soundcloud.com")){
+            target="EdgeCast";
+          }else{
+            fos.close();
+            return;
+          }
+        }
+        
+        
+        
+        
+        String rtt=result.getValues().get("mean_rtt_ms");
+        String result_str=timestamp+"|ping|"+target+"|"+rtt+"\n";
+        fos.write(result_str.getBytes());
+        fos.flush();
+      }
+
+    }
+    fos.close();
+    
+  }
+  
+  public synchronized HashMap<String,ArrayList<String>> readLatencyResultsFromMemory(boolean getServerResults) throws IOException{
+    File externalStorageDir = Environment.getExternalStorageDirectory();
+    File mobiperfDir = new File(externalStorageDir.getPath()+"/Mobiperf/");
+    if(!mobiperfDir.exists()){
+      return null;
+    }
+    
+    
+    File resultsFile;
+    if(getServerResults){
+      resultsFile=new File(mobiperfDir, "server_tasks.txt");
+    }else{
+      resultsFile=new File(mobiperfDir, "user_tasks.txt");
+    }
+    
+    if(!resultsFile.exists()){
+      return null;
+    }
+    
+    FileInputStream fin = new FileInputStream(resultsFile);
+    BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+    
+    String line="";
+    HashMap<String, ArrayList<String>> resultsMap= new HashMap<String, ArrayList<String>>();
+    while ((line = br.readLine()) != null) {
+        String[] toks=line.split("\\|");
+        if(toks.length!=4){
+          continue;
+        }
+        if (!toks[1].equals("ping")){
+          continue;
+        }
+        
+        
+        String target=toks[2];
+        if(!resultsMap.containsKey(target)){
+          resultsMap.put(target, new ArrayList<String>());
+        }
+        
+        ArrayList<String> series=resultsMap.get(target);
+        float rtt=Float.parseFloat(toks[3]);
+        series.add(toks[0]+"|"+(int)rtt);
+        resultsMap.put(target, series);
+        
+    }
+    
+    br.close();
+    fin.close();
+    
+    return resultsMap;
+  }
+  
+  public synchronized HashMap<String,ArrayList<String>> readThroughputResultsFromMemory(boolean getServerResults) throws IOException{
+    File externalStorageDir = Environment.getExternalStorageDirectory();
+    File mobiperfDir = new File(externalStorageDir.getPath()+"/Mobiperf/");
+    if(!mobiperfDir.exists()){
+      return null;
+    }
+    
+    
+    File resultsFile;
+    if(getServerResults){
+      resultsFile=new File(mobiperfDir, "server_tasks.txt");
+    }else{
+      resultsFile=new File(mobiperfDir, "user_tasks.txt");
+    }
+    
+    if(!resultsFile.exists()){
+      return null;
+    }
+    
+    FileInputStream fin = new FileInputStream(resultsFile);
+    BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+    
+    String line="";
+    HashMap<String, ArrayList<String>> resultsMap= new HashMap<String, ArrayList<String>>();
+    while ((line = br.readLine()) != null) {
+        String[] toks=line.split("\\|");
+        if(toks.length!=4){
+          continue;
+        }
+        if (!toks[1].equals("tcp")){
+          continue;
+        }
+        
+        
+        String direction=toks[2];
+        if(!resultsMap.containsKey(direction)){
+          resultsMap.put(direction, new ArrayList<String>());
+        }
+        
+        ArrayList<String> series=resultsMap.get(direction);
+        float thr=Float.parseFloat(toks[3]);
+        series.add(toks[0]+"|"+(int)thr);
+        resultsMap.put(direction, series);
+        
+    }
+    br.close();
+    fin.close();
+    
+    return resultsMap;
+  }
+  
 }

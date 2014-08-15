@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-package com.mobiperf_library.mobiperf;
+package com.mobiperf;
 
-import com.mobilyzer.util.Logger;
-import com.mobiperf_library.R;
+
+import com.mobiperf.R;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -35,6 +35,9 @@ import android.widget.TextView;
  */
 public class SplashScreenActivity extends Activity {
   private Bitmap logo;
+  private ImageView logoView;
+  
+  
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -43,7 +46,7 @@ public class SplashScreenActivity extends Activity {
     this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
     // Show Logo
-    ImageView logoView = (ImageView)findViewById(R.id.splash_logo);
+    logoView = (ImageView)findViewById(R.id.splash_logo);
     logo = BitmapFactory.decodeResource(getResources(), R.drawable.splashscreen);
     if (logo != null) {
       logoView.setImageBitmap(logo);
@@ -67,13 +70,30 @@ public class SplashScreenActivity extends Activity {
         SplashScreenActivity.this.getApplication().startActivity(intent);
         SplashScreenActivity.this.finish();
         // Recycle logo bitmap to avoid OOM exception
-        if (logo.isRecycled() == false) {
-          Logger.i("Recycle logo bitmap");
-          logo.recycle();
-          System.gc();
-        }
+//        if (logo!=null && !logo.isRecycled()) {
+//          Logger.i("Recycle logo bitmap");
+//          logo.recycle();
+//          logo=null;
+//          System.gc();
+//        }
+        
+//        BitmapDrawable bitmapDrawable = ((BitmapDrawable) logoView.getDrawable());
+        
+//
+//        if (null != bitmapDrawable && !bitmapDrawable.getBitmap().isRecycled()) {
+//          Logger.e("Recycle logo bitmap");
+//            bitmapDrawable.getBitmap().recycle();
+//        } else {
+//
+//            Logger.e("Bitmap is already recycled");
+//        }
+//
+//        bitmapDrawable = null;
+        System.gc();
+        
       }
     }, MobiperfConfig.SPLASH_SCREEN_DURATION_MSEC);
 
   }
+  
 }

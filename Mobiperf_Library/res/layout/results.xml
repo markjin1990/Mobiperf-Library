@@ -1,46 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="match_parent"
-  android:layout_height="match_parent"
-  android:padding="5dp">
-  <RelativeLayout
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <ProgressBar
-      style="@@android:style/Widget.ProgressBar.Horizontal"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:visibility="invisible"
-      android:layout_alignParentTop="true"
-      android:id="@+id/progress_bar"/>
+    android:layout_height="match_parent"
+    android:padding="5dp" >
+
     <RelativeLayout
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/resultFilter"
-      android:layout_below="@id/progress_bar">
-        <ToggleButton android:id="@+id/showUserResults"
-          android:layout_width="150dp"
-          android:layout_height="wrap_content"
-          android:layout_alignParentLeft="true"
-          android:textSize="@dimen/regularTextSize"
-          android:textOn="Manual"
-          android:textOff="Manual"/>
-        <ToggleButton android:id="@+id/showSystemResults"
-          android:layout_width="150dp"
-          android:layout_height="wrap_content"
-          android:layout_alignParentRight="true"
-          android:textSize="@dimen/regularTextSize"
-          android:textOn="Scheduled"
-          android:textOff="Scheduled"/>
-    </RelativeLayout>      
-    <ListView
-      android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/resultConsole"
-      android:scrollbars="vertical"
-      android:textColor="#000000"
-      android:layout_below="@id/resultFilter"/>
-      
-  </RelativeLayout>
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:id="@+id/displayFilter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+            <RadioGroup
+                android:id="@+id/radioGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+
+                <RadioButton
+                    android:id="@+id/radio_detailed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="0dp"
+                    android:checked="true"
+                    android:text="Detailed View" />
+
+                <RadioButton
+                    android:id="@+id/radio_graph"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="0dp"
+                    android:text="Graph View" />
+            </RadioGroup>
+
+            <!--
+                 <Button
+                android:id="@+id/visTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="0dp"
+                android:layout_below="@+id/radioGroup"
+                android:clickable="true"
+                android:text="Visualisation" />
+            -->
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/resultFilter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/displayFilter" >
+
+            <ToggleButton
+                android:id="@+id/showUserResults"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:textOff="Manual"
+                android:textOn="Manual"
+                android:textSize="@dimen/regularTextSize" />
+
+            <ToggleButton
+                android:id="@+id/showSystemResults"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:textOff="Scheduled"
+                android:textOn="Scheduled"
+                android:textSize="@dimen/regularTextSize" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/checkBoxFilters"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/resultFilter"
+            android:orientation="horizontal" >
+
+            <CheckBox
+                android:id="@+id/chkCompleted"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_marginLeft="10dp"
+                android:checked="true"
+                android:text="Completed Tasks" />
+
+            <CheckBox
+                android:id="@+id/chkFailed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="10dp"
+                android:checked="true"
+                android:text="Failed Tasks" />
+        </RelativeLayout>
+
+        <ListView
+            android:id="@+id/resultConsole"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/checkBoxFilters"
+            android:scrollbars="vertical"
+            android:textColor="#000000" />
+
+        <LinearLayout
+            android:id="@+id/graphConsole"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/resultFilter"
+            android:orientation="vertical" >
+
+            <ScrollView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" >
+
+                    <LinearLayout
+                        android:id="@+id/graph1"
+                        android:layout_width="fill_parent"
+                        android:layout_height="220dp"
+                        android:layout_marginTop="15dp"
+                        android:orientation="vertical" />
+
+                    <LinearLayout
+                        android:id="@+id/graph2"
+                        android:layout_width="fill_parent"
+                        android:layout_height="220dp"
+                        android:layout_marginTop="15dp"
+                        android:orientation="vertical" />
+                </LinearLayout>
+            </ScrollView>
+        </LinearLayout>
+    </RelativeLayout>
+
 </FrameLayout>
