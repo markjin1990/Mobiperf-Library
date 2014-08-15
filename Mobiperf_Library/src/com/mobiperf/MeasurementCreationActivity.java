@@ -78,6 +78,8 @@ public class MeasurementCreationActivity extends Activity {
     Spinner spinner = (Spinner) findViewById(R.id.measurementTypeSpinner);
     spinnerValues = new ArrayAdapter<String>(this.getApplicationContext(), R.layout.spinner_layout);
     
+//    spinnerValues.setDropDownViewResource(R.layout.simple_spinner_dropdown_item);
+    
     this.api = API.getAPI(parent, MobiperfConfig.CLIENT_KEY);
     this.console = parent.getConsole();
 
@@ -93,7 +95,8 @@ public class MeasurementCreationActivity extends Activity {
         spinnerValues.add(name);
       }
     }
-    spinnerValues.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//    spinnerValues.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    spinnerValues.setDropDownViewResource(R.layout.spinner_dropdown_item);
     spinner.setAdapter(spinnerValues);
     spinner.setOnItemSelectedListener(new MeasurementTypeOnItemSelectedListener());
     spinner.requestFocus();

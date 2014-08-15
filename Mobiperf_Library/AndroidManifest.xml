@@ -4,7 +4,7 @@
     android:versionCode="1122"
     android:versionName="3.1.1" >
 
-  	<uses-sdk android:minSdkVersion="9" android:targetSdkVersion="9" />
+  	<uses-sdk android:minSdkVersion="12" android:targetSdkVersion="12" />
   	<uses-permission android:name="android.permission.ACCESS_COARSE_UPDATES" />
   	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   	<uses-permission android:name="android.permission.INTERNET" />
@@ -50,7 +50,7 @@
             android:name="com.mobiperf.MeasurementCreationActivity"
             android:launchMode="singleTask"
             android:windowSoftInputMode="stateHidden"
-            android:theme="@android:style/Theme.Light.NoTitleBar" >
+            android:theme="@android:style/Theme.Light.NoTitleBar">   
         </activity>
         <activity
             android:name="com.mobiperf.SpeedometerPreferenceActivity"
