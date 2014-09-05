@@ -216,17 +216,30 @@ public class ResultsConsoleActivity extends Activity {
       @Override
       // All onXyz() callbacks are single threaded
       public void onReceive(Context context, Intent intent) {
+        ResultsConsoleActivity instance = (ResultsConsoleActivity)context;
         if (intent.getAction().equals(api.userResultAction)) {
           Logger.d("receive user results");
           switchBetweenResults(true);
-          console.updateStatus(null);
-          console.persistState();
-          populateGraphs(!userResultsActive);
+          // check whether console is initialized
+          if (instance.console != null) {
+            instance.console.updateStatus(null);
+            instance.console.persistState();
+            populateGraphs(!userResultsActive);
+          }
+          else {
+            console = ((SpeedometerApp)instance.getParent()).getConsole();
+          }
         } else if (intent.getAction().equals(API.SERVER_RESULT_ACTION)) {
           getConsoleContentFromScheduler(completedIsChecked, failedIsChecked);
-          console.updateStatus(null);
-          console.persistState();
-          populateGraphs(!userResultsActive);
+          // check whether console is initialized
+          if (instance.console != null) {
+            instance.console.updateStatus(null);
+            instance.console.persistState();
+            populateGraphs(!userResultsActive);
+          }
+          else {
+            console = ((SpeedometerApp)instance.getParent()).getConsole();
+          }
         } else if (intent.getAction().equals(MobiperfIntent.SCHEDULER_CONNECTED_ACTION)) {
           Logger.d("scheduler connected");
           switchBetweenResults(userResultsActive);
@@ -328,7 +341,10 @@ public class ResultsConsoleActivity extends Activity {
   private GraphView generateThroughputGraph(boolean serverResults) throws IOException {
 
     long current_time = System.currentTimeMillis();
-
+    // check whether console is initialized
+    if (console == null) {
+      return null;
+    }
     HashMap<String, ArrayList<String>> thr_results_map =
         console.readThroughputResultsFromMemory(serverResults);
     if (thr_results_map == null) {
@@ -537,7 +553,11 @@ public class ResultsConsoleActivity extends Activity {
   private GraphView generateLatencyGraph(boolean serverResults) throws IOException {
 
     long current_time = System.currentTimeMillis();
-
+    
+    // check whether console is initialized
+    if (console == null) {
+      return null;
+    }
     HashMap<String, ArrayList<String>> rtt_results_map =
         console.readLatencyResultsFromMemory(serverResults);
     if (rtt_results_map == null) {

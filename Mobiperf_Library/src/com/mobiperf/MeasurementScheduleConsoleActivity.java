@@ -133,11 +133,14 @@ public class MeasurementScheduleConsoleActivity extends Activity {
       if(item!=null){
         String taskId=item.getTaskId();
         ToggleButton pauseButton=(ToggleButton) (v.findViewById(R.id.pausebutton));
-        if(console.isPaused(taskId)){
-          pauseButton.setChecked(true);
-        }
-        else{
-          pauseButton.setChecked(false);
+        // check whether console is initialized
+        if (console != null) {
+          if(console.isPaused(taskId)){
+            pauseButton.setChecked(true);
+          }
+          else{
+            pauseButton.setChecked(false);
+          }
         }
         pauseButton.setOnClickListener(new View.OnClickListener() {
           private TaskItem taskitem;
