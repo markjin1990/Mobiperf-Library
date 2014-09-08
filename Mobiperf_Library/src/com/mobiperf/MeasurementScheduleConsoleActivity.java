@@ -61,7 +61,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
   public static final String TAB_TAG = "MEASUREMENT_SCHEDULE";
 
   private SpeedometerApp parent;
-  private Console console;
+//  private Console console;
   private API api;
 
   private TaskItemAdapter adapter;
@@ -78,7 +78,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
     parent = (SpeedometerApp) this.getParent();
     this.api = API.getAPI(parent, MobiperfConfig.CLIENT_KEY);
 
-    this.console = parent.getConsole();
+//    this.console = parent.getConsole();
 
     this.consoleView = (ListView) this.findViewById(R.id.measurementScheduleConsole);
     this.consoleView.setAdapter(adapter);
@@ -124,6 +124,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
     }
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+      Console console = MeasurementScheduleConsoleActivity.this.parent.getConsole();
       View v = convertView;
       if (v == null) {
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -143,6 +144,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
           }
         }
         pauseButton.setOnClickListener(new View.OnClickListener() {
+          private Console console = MeasurementScheduleConsoleActivity.this.parent.getConsole();
           private TaskItem taskitem;
           public void onClick(View v) {
             boolean paused = ((ToggleButton) v).isChecked();
@@ -218,6 +220,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
         }.init(item));
         Button cancelButton=(Button)(v.findViewById(R.id.cancelbutton));
         cancelButton.setOnClickListener(new View.OnClickListener() {
+          private Console console = MeasurementScheduleConsoleActivity.this.parent.getConsole();
           private TaskItem taskitem;
           public void onClick(View v) {
             try {
@@ -291,6 +294,7 @@ public class MeasurementScheduleConsoleActivity extends Activity {
 
 
   private synchronized void updateTasksFromConsole(){
+    Console console = parent.getConsole();
     if (console != null) {
       taskItems.clear();
       final List<String> user_tasks=console.getUserTasks();
