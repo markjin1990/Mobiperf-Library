@@ -62,12 +62,13 @@ public class ResultsConsoleActivity extends Activity {
 
   public static final String TAB_TAG = "MY_MEASUREMENTS";
 
+  private SpeedometerApp parent;
   private ListView consoleView;
   private ArrayAdapter<String> results;
   BroadcastReceiver receiver;
   private ToggleButton showUserResultButton;
   private ToggleButton showSystemResultButton;
-  private Console console;
+//  private Console console;
   boolean userResultsActive = false;
 
   // private Button visLinkButton;
@@ -92,6 +93,7 @@ public class ResultsConsoleActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.results);
 
+    this.parent = (SpeedometerApp) this.getParent();
     this.consoleView = (ListView) this.findViewById(R.id.resultConsole);
     this.results = new CustomArrayAdapter(getApplicationContext(), R.layout.list_item);
     this.consoleView.setAdapter(this.results);
@@ -206,8 +208,8 @@ public class ResultsConsoleActivity extends Activity {
     // get API singleton object
     this.api = API.getAPI(this, MobiperfConfig.CLIENT_KEY);
 
-    // get console singleton
-    this.console = ((SpeedometerApp) this.getParent()).getConsole();
+//    // get console singleton
+//    this.console = ((SpeedometerApp) this.getParent()).getConsole();
 
     IntentFilter filter = new IntentFilter();
     filter.addAction(MobiperfIntent.SCHEDULER_CONNECTED_ACTION);
@@ -217,17 +219,28 @@ public class ResultsConsoleActivity extends Activity {
       @Override
       // All onXyz() callbacks are single threaded
       public void onReceive(Context context, Intent intent) {
+        // the console object should be obtained via api call at each time
+        // in case that the service hasn't been connected
+        ResultsConsoleActivity instance = (ResultsConsoleActivity)context;
+        Console console = instance.parent.getConsole();
+        
         if (intent.getAction().equals(api.userResultAction)) {
           Logger.d("receive user results");
           switchBetweenResults(true);
-          console.updateStatus(null);
-          console.persistState();
-          populateGraphs(!userResultsActive);
+          // check whether console is initialized
+          if (console != null) {
+            console.updateStatus(null);
+            console.persistState();
+            populateGraphs(!userResultsActive);
+          }
         } else if (intent.getAction().equals(API.SERVER_RESULT_ACTION)) {
           getConsoleContentFromScheduler(completedIsChecked, failedIsChecked);
-          console.updateStatus(null);
-          console.persistState();
-          populateGraphs(!userResultsActive);
+          // check whether console is initialized
+          if (console != null) {
+            console.updateStatus(null);
+            console.persistState();
+            populateGraphs(!userResultsActive);
+          }
         } else if (intent.getAction().equals(MobiperfIntent.SCHEDULER_CONNECTED_ACTION)) {
           Logger.d("scheduler connected");
           switchBetweenResults(userResultsActive);
@@ -264,6 +277,10 @@ public class ResultsConsoleActivity extends Activity {
     Logger.d("ResultsConsoleActivity.getConsoleContentFromScheduler called");
     // Scheduler may have not had time to start yet. When it does, the intent above will call this
     // again.
+
+    // the console object should be obtained via api call at each time
+    // in case that the service hasn't been connected
+    Console console = ((SpeedometerApp)getParent()).getConsole();
     if (console != null) {
       Logger.d("Updating measurement results from thread " + Thread.currentThread().getName());
       results.clear();
@@ -331,7 +348,11 @@ public class ResultsConsoleActivity extends Activity {
   private GraphView generateThroughputGraph(boolean serverResults) throws IOException {
 
     long current_time = System.currentTimeMillis();
-
+    // check whether console is initialized
+    Console console = this.parent.getConsole();
+    if (console == null) {
+      return null;
+    }
     HashMap<String, ArrayList<String>> thr_results_map =
         console.readThroughputResultsFromMemory(serverResults);
     if (thr_results_map == null) {
@@ -540,7 +561,12 @@ public class ResultsConsoleActivity extends Activity {
   private GraphView generateLatencyGraph(boolean serverResults) throws IOException {
 
     long current_time = System.currentTimeMillis();
-
+    
+    // check whether console is initialized
+    Console console = this.parent.getConsole();
+    if (console == null) {
+      return null;
+    }
     HashMap<String, ArrayList<String>> rtt_results_map =
         console.readLatencyResultsFromMemory(serverResults);
     if (rtt_results_map == null) {

@@ -65,7 +65,7 @@ public class MeasurementCreationActivity extends Activity {
   private String tcpDir;
 
   private API api;
-  private Console console;
+//  private Console console;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -78,8 +78,10 @@ public class MeasurementCreationActivity extends Activity {
     Spinner spinner = (Spinner) findViewById(R.id.measurementTypeSpinner);
     spinnerValues = new ArrayAdapter<String>(this.getApplicationContext(), R.layout.spinner_layout);
     
+//    spinnerValues.setDropDownViewResource(R.layout.simple_spinner_dropdown_item);
+    
     this.api = API.getAPI(parent, MobiperfConfig.CLIENT_KEY);
-    this.console = parent.getConsole();
+//    this.console = parent.getConsole();
 
     // adding list of visible measurements
     for (String name : API.getMeasurementNames()) {
@@ -93,7 +95,8 @@ public class MeasurementCreationActivity extends Activity {
         spinnerValues.add(name);
       }
     }
-    spinnerValues.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//    spinnerValues.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    spinnerValues.setDropDownViewResource(R.layout.spinner_dropdown_item);
     spinner.setAdapter(spinnerValues);
     spinner.setOnItemSelectedListener(new MeasurementTypeOnItemSelectedListener());
     spinner.requestFocus();
@@ -287,11 +290,11 @@ public class MeasurementCreationActivity extends Activity {
           Toast.makeText(MeasurementCreationActivity.this, R.string.userMeasurementFailureToast,
             Toast.LENGTH_LONG).show();
         }
-        Logger.e("MeasurementCreationActivity@button click: console is " + console);
 
 
-        console = parent.getConsole();
+        Console console = parent.getConsole();
         if ( console != null ) {
+          Logger.e("MeasurementCreationActivity@button click: console is " + console);
           console.updateStatus("User task " + newTask.getDescriptor()
             + " is submitted to scheduler");
           console.addUserTask(newTask.getTaskId(), newTask.getMeasurementType()+','+taskTarget);

@@ -102,10 +102,10 @@ public class SpeedometerApp extends TabActivity {
  public Console getConsole() {
    Logger.e("SpeedometerApp-> getConsole called"); 
    if (isBound) {
-	   Logger.e("SpeedometerApp-> getConsole called 1");
+	 Logger.e("SpeedometerApp-> getConsole called 1");
      return this.console;
    } else {
-	   Logger.e("SpeedometerApp-> getConsole called 2");
+	 Logger.e("SpeedometerApp-> getConsole called 2");
      bindToService();
      return null;
    }
@@ -354,7 +354,9 @@ public class SpeedometerApp extends TabActivity {
 
  private void quitApp() {
    Logger.e("SpeedometerApp-> quitApp called");
-   api.unbind();
+   if (api != null) {
+     api.unbind();
+   }
    if (isBound) {
      unbindService(serviceConn);
      isBound = false;
