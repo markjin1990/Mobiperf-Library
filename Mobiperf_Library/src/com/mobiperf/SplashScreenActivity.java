@@ -17,6 +17,7 @@ package com.mobiperf;
 
 
 import com.mobiperf.R;
+import com.squareup.picasso.Picasso;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -47,10 +48,13 @@ public class SplashScreenActivity extends Activity {
     this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
     // Show Logo
     logoView = (ImageView)findViewById(R.id.splash_logo);
-    logo = BitmapFactory.decodeResource(getResources(), R.drawable.splashscreen);
-    if (logo != null) {
-      logoView.setImageBitmap(logo);
-    }
+//    logo = BitmapFactory.decodeResource(getResources(), R.drawable.splashscreen);
+//    if (logo != null) {
+//      logoView.setImageBitmap(logo);
+//    }
+    
+    Picasso.with(this).load(R.drawable.splashscreen).into(logoView);
+    
     // Display version
     TextView version = (TextView)findViewById(R.id.splash_version);
     try {

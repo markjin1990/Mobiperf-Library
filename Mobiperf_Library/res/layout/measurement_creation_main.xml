@@ -38,6 +38,7 @@
         <Spinner android:id="@+id/measurementTypeSpinner"
           android:layout_width="match_parent"
           android:layout_height="40dip"
+          android:drawSelectorOnTop="true"
           android:prompt="@string/measurementTypePrompt"/>
       </LinearLayout>        
     </TableRow>  
