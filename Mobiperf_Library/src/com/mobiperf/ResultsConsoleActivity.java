@@ -189,7 +189,6 @@ public class ResultsConsoleActivity extends Activity {
       @Override
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         Logger.d("onCheckedChanged");
-        Logger.d("ashkan "+(buttonView == showUserResultButton)+" "+isChecked);
         switchBetweenResults(buttonView == showUserResultButton ? isChecked : !isChecked);
 
         if (isChecked) {
@@ -314,16 +313,14 @@ public class ResultsConsoleActivity extends Activity {
 
     GraphView graphView = null;
     try {
-      Logger.e("ashkan: "+serverResults);
       graphView = generateThroughputGraph(serverResults);
-      Logger.e("ashkan: graphView is null?"+(graphView==null));
     } catch (IOException e) {
       e.printStackTrace();
     }
     if (graphView != null) {
       graph1.addView(graphView);
     } else {
-      Logger.e("ashkan: graph1 is null");
+      Logger.e("ashnik_debug: graph1 is null");
       params.height = 0;
       graph1.setLayoutParams(params);
     }
