@@ -475,6 +475,11 @@ public class ResultsConsoleActivity extends Activity {
         }
       }
 
+      
+      if(data_points.length==0){
+    	  return null;
+      }
+      
 
       GraphViewSeries series;
       if (dir.equals("Up") || dir.equals("true")) {
@@ -684,8 +689,10 @@ public class ResultsConsoleActivity extends Activity {
           x_min = newIndex;
         }
       }
-
-
+      
+      if(data_points.length==0){
+    	  return null;
+      }
 
       GraphViewSeries series =
           new GraphViewSeries(dir, new GraphViewSeriesStyle(colors[color_index], 2), data_points);
