@@ -48,6 +48,7 @@ import com.mobilyzer.measurements.PingTask;
 import com.mobilyzer.measurements.TCPThroughputTask;
 import com.mobilyzer.measurements.TracerouteTask;
 import com.mobilyzer.measurements.UDPBurstTask;
+import com.mobilyzer.measurements.VideoQoETask;
 import com.mobilyzer.util.MLabNS;
 
 /**
@@ -88,7 +89,7 @@ public class MeasurementCreationActivity extends Activity {
       /**
        *  TODO(Hongyi): Avoid keyboard popup problem.
        */
-      if (name.equals(TCPThroughputTask.DESCRIPTOR)) {
+      if (name.equals(VideoQoETask.DESCRIPTOR)) {
         spinnerValues.insert(name, 0);
       }
       else {
@@ -265,11 +266,20 @@ public class MeasurementCreationActivity extends Activity {
           taskTarget=udpDir;
           measurementType = TaskType.UDPBURST;
         } else if (measurementTypeUnderEdit.equals(TCPThroughputTask.TYPE)) {
-            params.put("target", MLabNS.TARGET);
-            params.put("dir_up", tcpDir);
-            measurementType = TaskType.TCPTHROUGHPUT;
-            taskTarget=tcpDir;
-            showLengthWarning = true;
+          params.put("target", MLabNS.TARGET);
+          params.put("dir_up", tcpDir);
+          measurementType = TaskType.TCPTHROUGHPUT;
+          taskTarget=tcpDir;
+          showLengthWarning = true;
+        }
+        else if (measurementTypeUnderEdit.equals(VideoQoETask.TYPE)) {
+//          params.put("", value)
+          measurementType = TaskType.VIDEOQOE;
+          params.put("manifestURL", "http://www.youtube.com/api/manifest/dash/id/bf5bb2419360daf1/source/youtube?"
+              + "as=fmp4_audio_clear,fmp4_sd_hd_clear&sparams=ip,ipbits,expire,as&ip=0.0.0.0&"
+              + "ipbits=0&expire=19000000000&signature=255F6B3C07C753C88708C07EA31B7A1A10703C8D."
+              + "2D6A28B21F921D0B245CDCF36F7EB54A2B5ABFC2&key=ik0");
+          params.put("contentId", "bf5bb2419360daf1");
         }
         
 
