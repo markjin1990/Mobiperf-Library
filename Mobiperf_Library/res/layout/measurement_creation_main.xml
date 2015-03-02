@@ -11,6 +11,11 @@
     android:layout_alignParentBottom="true"
     android:layout_centerHorizontal="true"
     android:text="Run" />
+  <Button android:id="@+id/runTestVideosButton" 
+    android:layout_width="90dip" 
+    android:layout_height="wrap_content" 
+    android:layout_alignParentBottom="true"
+    android:text="Test Videos!" />
   <ScrollView
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -288,6 +293,94 @@
             android:layout_height="wrap_content"
             android:text="Down" />
         </RadioGroup> 
+      </LinearLayout>        
+    </TableRow>
+    
+    <TableRow
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/VideoQoEAlgorithmView">
+      
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|center_vertical"
+        android:textSize="@dimen/regularTextSize"
+        android:text="@string/VideoQoEAlgorithmLabel"/>
+      <LinearLayout
+        android:paddingLeft="@dimen/marginBetweenColumns"
+        android:orientation="horizontal"  
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <RadioGroup
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal">
+          <RadioButton android:id="@+id/VideoQoECBA"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CBA" />
+          <RadioButton android:id="@+id/VideoQoEBBA"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BBA" />
+          <RadioButton android:id="@+id/VideoQoEProgressive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Prog." />
+        </RadioGroup> 
+      </LinearLayout>        
+    </TableRow>
+    <TableRow
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/VideoEnergySavingView"
+      android:paddingTop="@dimen/marginBetweenRows">
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|center_vertical"
+        android:textSize="@dimen/regularTextSize"
+        android:text="@string/VideoEnergySavingLabel"/>
+      <LinearLayout
+        android:paddingLeft="@dimen/marginBetweenColumns"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <EditText android:id="@+id/VideoEnergySavingText"
+          android:layout_height="@dimen/editTextBoxHeight"
+          android:layout_width="match_parent"
+          android:hint="@string/VideoEnergySavingHint"
+          android:inputType="number"
+          android:lines="1"
+          android:textSize="@dimen/smallTextSize"
+          android:text="@string/VideoEnergySavingHint"/>
+      </LinearLayout>        
+    </TableRow>
+    <TableRow
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/VideoBufferSizeView"
+      android:paddingTop="@dimen/marginBetweenRows">
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|center_vertical"
+        android:textSize="@dimen/regularTextSize"
+        android:text="@string/VideoBufferSizeLabel"/>
+      <LinearLayout
+        android:paddingLeft="@dimen/marginBetweenColumns"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <EditText android:id="@+id/VideoBufferSizeText"
+          android:layout_height="@dimen/editTextBoxHeight"
+          android:layout_width="match_parent"
+          android:hint="@string/VideoBufferSizeHint"
+          android:inputType="number"
+          android:lines="1"
+          android:textSize="@dimen/smallTextSize"
+          android:text="@string/VideoBufferSizeHint"/>
       </LinearLayout>        
     </TableRow>
     </TableLayout>

@@ -11,13 +11,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.google.myjson.reflect.TypeToken;
+import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
 import com.mobiperf.util.Logger;
 import com.mobiperf.R;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.measurements.TCPThroughputTask.TCPThroughputDesc;
+import com.mobilyzer.measurements.VideoQoETask.VideoQoEDesc;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.api.API;
 
@@ -542,6 +545,37 @@ public final class Console extends Service{
         String rtt=result.getValues().get("mean_rtt_ms");
         String result_str=timestamp+"|ping|"+target+"|"+rtt+"\n";
         fos.write(result_str.getBytes());
+        fos.flush();
+      }
+      else if (result.getType() == "video") {
+        StringBuilder sb = new StringBuilder();
+        VideoQoEDesc desc = (VideoQoEDesc) result.getMeasurementDesc();
+        Map<String, String> rMap = result.getValues();
+        sb.append(timestamp).append("|video")
+          .append("|").append(desc.contentType)
+//          .append("|").append(desc.energySaving)
+          .append("|").append(rMap.get("time_elapsed"))
+          //.append("|video_num_frame_dropped:")
+          .append("|").append(rMap.get("video_num_frame_dropped"))
+//          .append("|video_initial_loading_time:")
+          .append("|").append(rMap.get("video_initial_loading_time"))
+//          .append("|video_rebuffer_times:")
+          .append("|").append(rMap.get("video_rebuffer_times"))
+//          .append("|video_average_bitrate:")
+          .append("|").append(rMap.get("video_average_bitrate"))
+//          .append("|video_num_bitrate_change:")
+          .append("|").append(rMap.get("video_num_bitrate_change"))
+//          .append("|video_bitrate_times:")
+          .append("|").append(rMap.get("video_bitrate_times"))
+//          .append("|video_bitrate_values:")
+          .append("|").append(rMap.get("video_bitrate_values"))
+          .append("|").append(rMap.get("video_bufferload_times"))
+          .append("|").append(rMap.get("video_bufferload_values"))
+          //.append("|video_goodput_times:").append(rMap.get("video_goodput_times"))
+          //.append("|video_goodput_values:").append(rMap.get("video_goodput_values"))
+          ;
+        sb.append("\n");
+        fos.write(sb.toString().getBytes());
         fos.flush();
       }
 

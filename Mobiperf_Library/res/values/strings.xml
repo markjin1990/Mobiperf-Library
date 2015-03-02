@@ -55,6 +55,11 @@
     <string name="defaultUser">Anonymous</string>
     <string name="TCPThroughputDirLabel">Direction:</string>
     <string name="TCPThroughputTargetHint">m-lab</string>
+    <string name="VideoQoEAlgorithmLabel">DASH algorithm</string>
+    <string name="VideoEnergySavingLabel">Energy saving (%)</string>
+    <string name="VideoEnergySavingHint">0</string>
+    <string name="VideoBufferSizeLabel">Buffer (# of blocks)</string>
+    <string name="VideoBufferSizeHint">100</string>
     
     
 </resources>
