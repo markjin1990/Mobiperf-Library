@@ -422,9 +422,10 @@ public class MeasurementCreationActivity extends Activity {
               + "as=fmp4_audio_clear,fmp4_sd_hd_clear&sparams=ip,ipbits,expire,as&ip=0.0.0.0&"
               + "ipbits=0&expire=19000000000&signature=255F6B3C07C753C88708C07EA31B7A1A10703C8D."
               + "2D6A28B21F921D0B245CDCF36F7EB54A2B5ABFC2&key=ik0");
+          params.put("content_id", "v1uyQZNg2vE"); // How it feels [through Google Glass]
 //          params.put("content_id", "bf5bb2419360daf1");
 //          params.put("content_id", "iVAgTiBrrDA");
-          params.put("content_id", "VvpS20gCXrM");
+//          params.put("content_id", "VvpS20gCXrM");
 //          params.put("content_id", "gpnUmMcngYM");
 //          params.put("content_id", "tZmcFOt0E7M");
           
@@ -453,6 +454,7 @@ public class MeasurementCreationActivity extends Activity {
         }
         
 
+//        for (int i = 0; i < 10; i++)
         try {
           newTask = api.createTask(measurementType,
             Calendar.getInstance().getTime(),

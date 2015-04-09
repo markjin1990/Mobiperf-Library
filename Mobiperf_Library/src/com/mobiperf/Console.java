@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,8 @@ import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.measurements.TCPThroughputTask.TCPThroughputDesc;
 import com.mobilyzer.measurements.VideoQoETask.VideoQoEDesc;
 import com.mobilyzer.util.MeasurementJsonConvertor;
+import com.mobilyzer.util.Util;
+import com.mobilyzer.util.Util.Burst;
 import com.mobilyzer.api.API;
 
 import android.app.Notification;
@@ -551,11 +554,18 @@ public final class Console extends Service{
         StringBuilder sb = new StringBuilder();
         VideoQoEDesc desc = (VideoQoEDesc) result.getMeasurementDesc();
         Map<String, String> rMap = result.getValues();
-        sb.append(timestamp).append("|video")
+        
+//        String frameDropStr = rMap.get("video_frame_drop_detail").replaceAll("^\"|\"$", "");
+//        Logger.e(frameDropStr);
+//        List<String> frameDropTime = Arrays.asList(frameDropStr.split(","));
+        List<String> frameDropTime = Util.buildList(rMap.get("video_frame_drop_detail"));
+        List<Burst> burstList = Util.calculateFrameDropBurst(frameDropTime);
+//        sb.append(timestamp).append("|video")
+        sb.append(rMap.get("timestamp")).append("|video")
           .append("|").append(desc.contentType)
 //          .append("|").append(desc.energySaving)
           .append("|").append(rMap.get("time_elapsed"))
-          //.append("|video_num_frame_dropped:")
+//          .append("|video_num_frame_dropped:")
           .append("|").append(rMap.get("video_num_frame_dropped"))
 //          .append("|video_initial_loading_time:")
           .append("|").append(rMap.get("video_initial_loading_time"))
@@ -569,10 +579,16 @@ public final class Console extends Service{
           .append("|").append(rMap.get("video_bitrate_times"))
 //          .append("|video_bitrate_values:")
           .append("|").append(rMap.get("video_bitrate_values"))
-          .append("|").append(rMap.get("video_bufferload_times"))
-          .append("|").append(rMap.get("video_bufferload_values"))
+//          .append("|").append(rMap.get("video_bufferload_times"))
+//          .append("|").append(rMap.get("video_bufferload_values"))
+//          .append("|video_frame_drop_detail")
+          .append("|").append(rMap.get("video_frame_drop_detail"))
           //.append("|video_goodput_times:").append(rMap.get("video_goodput_times"))
           //.append("|video_goodput_values:").append(rMap.get("video_goodput_values"))
+          
+          .append("|").append(burstList.size())
+          .append("|").append(Util.parseFrameDropBurstTimestamp(burstList))
+          .append("|").append(Util.parseFrameDropBurstNum(burstList))
           ;
         sb.append("\n");
         fos.write(sb.toString().getBytes());
