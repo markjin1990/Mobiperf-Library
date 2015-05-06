@@ -221,11 +221,6 @@ public class MeasurementCreationActivity extends Activity {
       }
       
       params.put("content_type", String.valueOf(adaptationCode));
-      // Get energy saving percentage
-      EditText videoEnergySavingText = 
-          (EditText) findViewById(R.id.VideoEnergySavingText);
-      params.put("energy_saving", 
-          videoEnergySavingText.getText().toString());
       // Get # of buffer block
       EditText videoBufferSizeText = 
           (EditText) findViewById(R.id.VideoBufferSizeText);
@@ -296,7 +291,6 @@ public class MeasurementCreationActivity extends Activity {
       this.findViewById(R.id.TCPThroughputDirView).setVisibility(View.VISIBLE);
     } else if (this.measurementTypeUnderEdit.compareTo(VideoQoETask.TYPE) == 0) {
       this.findViewById(R.id.VideoQoEAlgorithmView).setVisibility(View.VISIBLE);
-      this.findViewById(R.id.VideoEnergySavingView).setVisibility(View.VISIBLE);
       this.findViewById(R.id.VideoBufferSizeView).setVisibility(View.VISIBLE);
     }
   }
@@ -441,11 +435,6 @@ public class MeasurementCreationActivity extends Activity {
             adaptationCode = DemoUtil.TYPE_PROGRESSIVE;
           }
           params.put("content_type", String.valueOf(adaptationCode));
-          // Get energy saving percentage
-          EditText videoEnergySavingText = 
-              (EditText) findViewById(R.id.VideoEnergySavingText);
-          params.put("energy_saving", 
-              videoEnergySavingText.getText().toString());
           // Get # of buffer block
           EditText videoBufferSizeText = 
               (EditText) findViewById(R.id.VideoBufferSizeText);
